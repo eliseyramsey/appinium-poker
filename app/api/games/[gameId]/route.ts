@@ -52,6 +52,18 @@ interface UpdateGameBody {
   hostPlayerId?: string | null;
 }
 
+// Helper to calculate average from votes
+function calculateVoteAverage(votes: { value: string }[]): number | null {
+  const numericVotes = votes
+    .map((v) => parseFloat(v.value))
+    .filter((v) => !isNaN(v));
+
+  if (numericVotes.length === 0) return null;
+
+  const sum = numericVotes.reduce((a, b) => a + b, 0);
+  return Math.round((sum / numericVotes.length) * 10) / 10;
+}
+
 // PATCH /api/games/[gameId] - Update game (reveal, settings)
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
@@ -84,6 +96,50 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         { error: "No fields to update" },
         { status: 400 }
       );
+    }
+
+    // If changing current issue, update issue statuses
+    if (body.currentIssueId !== undefined) {
+      // Set new issue to "voting"
+      if (body.currentIssueId) {
+        await supabase
+          .from("issues")
+          .update({ status: "voting" } as never)
+          .eq("id", body.currentIssueId);
+      }
+    }
+
+    // If revealing, calculate and save final score to current issue
+    if (body.status === "revealed") {
+      // Get current game to find current_issue_id
+      const { data: gameData } = await supabase
+        .from("games")
+        .select("current_issue_id")
+        .eq("id", gameId)
+        .single();
+
+      const currentIssueId = (gameData as { current_issue_id: string | null } | null)?.current_issue_id;
+
+      if (currentIssueId) {
+        // Get all votes for this issue
+        const { data: votes } = await supabase
+          .from("votes")
+          .select("value")
+          .eq("issue_id", currentIssueId);
+
+        if (votes && votes.length > 0) {
+          const average = calculateVoteAverage(votes as { value: string }[]);
+
+          // Update issue with final score and status
+          await supabase
+            .from("issues")
+            .update({
+              final_score: average,
+              status: "voted",
+            } as never)
+            .eq("id", currentIssueId);
+        }
+      }
     }
 
     const { data, error } = await supabase

@@ -307,9 +307,42 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 - No backend connected yet
 - Mock players in game room for demo
 
+---
+
+### 2026-02-14: Backend & Realtime Sync (Session 2)
+
+**Completed:**
+- Created Supabase project and configured credentials
+- Ran database migrations in Supabase SQL Editor
+- Implemented all API routes:
+  - `POST /api/games` — create game
+  - `GET/PATCH /api/games/[id]` — get/update game
+  - `POST /api/players` — join game
+  - `POST/DELETE /api/votes` — submit/clear votes
+  - `GET/POST /api/issues` — list/create issues
+  - `GET/PATCH/DELETE /api/issues/[id]` — manage issues
+- Created `useGameRealtime` hook for live multiplayer sync
+- Updated all pages to use Supabase API instead of local state
+- Fixed WebSocket issues (StrictMode race condition)
+- Implemented auto-reveal when all players voted
+- Added countdown animation (3-2-1) before reveal
+- Fixed "Start New Round" to sync across all clients
+- Fixed UI flicker between countdown and reveal
+- Created GitHub repo and pushed code
+
+**Technical Notes:**
+- Supabase client uses singleton pattern (`getSupabase()`)
+- Realtime callbacks use `useGameStore.getState()` for fresh state
+- `isRevealing` state prevents UI flash after countdown
+- Delay subscription by 100ms to avoid StrictMode unmount issues
+
+**Current State:**
+- Multiplayer works! Real-time sync between tabs/devices
+- GitHub: https://github.com/eliseyramsey/appinium-poker
+- Milestones 2, 7, 8 complete
+
 **Next Steps:**
-1. Create Supabase project
-2. Run migrations (`supabase/migrations/001_initial_schema.sql`)
-3. Add `.env.local` with Supabase credentials
-4. Implement API routes
-5. Add Realtime subscriptions for multiplayer sync
+1. Milestone 9: Issues Sidebar
+2. Milestone 11: Confidence Vote API
+3. Milestone 12: Meme System
+4. Deploy to Vercel

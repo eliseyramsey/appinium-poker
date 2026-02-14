@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, PanelRightOpen, PanelRightClose } from "lucide-react";
+import { IssuesSidebar } from "@/components/issues/IssuesSidebar";
 import { Button } from "@/components/ui/Button";
 import { VOTING_CARDS } from "@/lib/constants";
 import { usePlayerStore } from "@/lib/store/playerStore";
@@ -24,12 +25,14 @@ export default function GameRoomPage() {
   const players = useGameStore((state) => state.players);
   const votes = useGameStore((state) => state.votes);
   const isRevealed = useGameStore((state) => state.isRevealed);
+  const currentIssue = useGameStore((state) => state.currentIssue);
 
   const [copied, setCopied] = useState(false);
   const [showConfidence, setShowConfidence] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isRevealing, setIsRevealing] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const countdownStartedRef = useRef(false);
 
   // Subscribe to realtime updates
@@ -188,60 +191,71 @@ export default function GameRoomPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-surface)] flex flex-col">
-      {/* Header */}
-      <header className="bg-white border-b border-[var(--border)] px-4 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          {/* Left: Logo + Game Name */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[var(--primary)] rounded-lg flex items-center justify-center text-white text-xl">
-              🃏
-            </div>
-            <div className="px-3 py-1.5 bg-[var(--bg-surface)] rounded-lg text-sm font-medium text-[var(--text-primary)]">
-              Planning Session
-            </div>
-          </div>
-
-          {/* Right: Controls */}
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowConfidence(true)}
-            >
-              ✊ Confidence
-            </Button>
-
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleCopyLink}
-            >
-              {copied ? <Check size={16} /> : <Copy size={16} />}
-              {copied ? "Copied!" : "Invite"}
-            </Button>
-
-            {/* User pill */}
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--bg-surface)] rounded-full">
-              <div className="w-7 h-7 rounded-full overflow-hidden">
-                <Image
-                  src={currentPlayer.avatar || "https://randomuser.me/api/portraits/men/32.jpg"}
-                  alt="Avatar"
-                  width={28}
-                  height={28}
-                  className="object-cover"
-                />
+    <div className="min-h-screen bg-white flex">
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header */}
+        <header className="bg-white border-b border-[var(--border)] px-4 py-3">
+          <div className="flex items-center justify-between">
+            {/* Left: Logo + Game Name */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-[var(--primary)] rounded-lg flex items-center justify-center text-white text-xl">
+                🃏
               </div>
-              <span className="text-sm font-medium text-[var(--text-primary)]">
-                {currentPlayer.name}
-              </span>
+              <div className="px-3 py-1.5 bg-[var(--bg-surface)] rounded-lg text-sm font-medium text-[var(--text-primary)]">
+                {currentIssue?.title || "Planning Session"}
+              </div>
+            </div>
+
+            {/* Right: Controls */}
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowConfidence(true)}
+              >
+                ✊ Confidence
+              </Button>
+
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleCopyLink}
+              >
+                {copied ? <Check size={16} /> : <Copy size={16} />}
+                {copied ? "Copied!" : "Invite"}
+              </Button>
+
+              {/* User pill */}
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--bg-surface)] rounded-full">
+                <div className="w-7 h-7 rounded-full overflow-hidden">
+                  <Image
+                    src={currentPlayer.avatar || "https://randomuser.me/api/portraits/men/32.jpg"}
+                    alt="Avatar"
+                    width={28}
+                    height={28}
+                    className="object-cover"
+                  />
+                </div>
+                <span className="text-sm font-medium text-[var(--text-primary)]">
+                  {currentPlayer.name}
+                </span>
+              </div>
+
+              {/* Sidebar toggle */}
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] rounded-lg transition-colors"
+                title={sidebarOpen ? "Hide Issues" : "Show Issues"}
+              >
+                {sidebarOpen ? <PanelRightClose size={20} /> : <PanelRightOpen size={20} />}
+              </button>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col items-center justify-center p-8">
+      <main className="flex-1 flex flex-col items-center justify-center p-8 bg-[var(--bg-surface)]">
         {/* Poker Table */}
         <div className="relative w-full max-w-3xl">
           {/* Table */}
@@ -343,36 +357,44 @@ export default function GameRoomPage() {
         </div>
       </div>
 
-      {/* Confidence Vote Modal */}
-      {showConfidence && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full">
-            <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">
-              Confidence Vote
-            </h2>
-            <p className="text-[var(--text-secondary)] mb-6">
-              How confident are you in this sprint?
-            </p>
-            <div className="flex justify-center gap-4 mb-6">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <button
-                  key={n}
-                  className="w-14 h-14 rounded-full bg-[var(--bg-surface)] text-2xl hover:bg-[var(--primary-light)] transition-colors"
-                >
-                  {n === 1 ? "✊" : n === 2 ? "✌️" : n === 3 ? "🤟" : n === 4 ? "🖖" : "🖐️"}
-                </button>
-              ))}
+        {/* Confidence Vote Modal */}
+        {showConfidence && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+                Confidence Vote
+              </h2>
+              <p className="text-[var(--text-secondary)] mb-6">
+                How confident are you in this sprint?
+              </p>
+              <div className="flex justify-center gap-4 mb-6">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    className="w-14 h-14 rounded-full bg-[var(--bg-surface)] text-2xl hover:bg-[var(--primary-light)] transition-colors"
+                  >
+                    {n === 1 ? "✊" : n === 2 ? "✌️" : n === 3 ? "🤟" : n === 4 ? "🖖" : "🖐️"}
+                  </button>
+                ))}
+              </div>
+              <Button
+                variant="secondary"
+                className="w-full"
+                onClick={() => setShowConfidence(false)}
+              >
+                Close
+              </Button>
             </div>
-            <Button
-              variant="secondary"
-              className="w-full"
-              onClick={() => setShowConfidence(false)}
-            >
-              Close
-            </Button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
+
+      {/* Issues Sidebar */}
+      <IssuesSidebar
+        gameId={gameId}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
     </div>
   );
 }

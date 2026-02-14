@@ -145,18 +145,18 @@
 
 ---
 
-## Milestone 9: Issues Sidebar
+## Milestone 9: Issues Sidebar ✅
 > Manage backlog items
 
-- [ ] Build IssuesSidebar component (collapsible right panel)
-- [ ] Display list of issues with status badges
-- [ ] Highlight current voting issue
-- [ ] "Add Issue" quick form (title input)
-- [ ] Issue card shows: ID, title, status, final score
-- [ ] Click issue → set as current voting item
-- [ ] Edit issue (inline or modal)
-- [ ] Delete issue with confirmation
-- [ ] Show total issues count and total points
+- [x] Build IssuesSidebar component (collapsible right panel)
+- [x] Display list of issues with status badges
+- [x] Highlight current voting issue
+- [x] "Add Issue" quick form (title input)
+- [x] Issue card shows: ID, title, status, final score
+- [x] Click issue → set as current voting item
+- [x] Edit issue (inline)
+- [x] Delete issue with confirmation
+- [x] Show total issues count and total points
 - [ ] Drag-and-drop reordering (optional, can defer)
 
 ---
