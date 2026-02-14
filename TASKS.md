@@ -35,7 +35,7 @@
 
 ---
 
-## Milestone 2: Database & API
+## Milestone 2: Database & API ✅
 > Backend infrastructure
 
 - [x] Write SQL migrations for all tables (games, players, issues, votes, confidence_votes)
@@ -46,7 +46,7 @@
 - [x] Create Supabase client (browser + server)
 - [x] Implement API route: POST `/api/games` (create game)
 - [x] Implement API route: GET `/api/games/[id]` (get game)
-- [x] Implement API route: PATCH `/api/games/[id]` (update game status)
+- [x] Implement API route: PATCH `/api/games/[id]` (update game status, save final_score)
 - [x] Implement API route: POST `/api/players` (join game)
 - [x] Implement API route: POST `/api/votes` (submit vote)
 - [x] Implement API route: DELETE `/api/votes` (clear votes)
@@ -80,7 +80,7 @@
   - [x] Show average toggle
   - [x] Countdown animation toggle
 - [x] Form validation
-- [ ] Submit → create game in DB → redirect to join page
+- [x] Submit → create game in DB → redirect to join page
 - [x] Generate unique game ID (nanoid)
 
 ---
@@ -246,8 +246,8 @@
 ## Milestone 16: Deployment
 > Ship it!
 
-- [ ] Create GitHub repository
-- [ ] Push code to GitHub
+- [x] Create GitHub repository
+- [x] Push code to GitHub
 - [ ] Connect Vercel to repository
 - [ ] Configure environment variables in Vercel
 - [ ] Deploy to production
