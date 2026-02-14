@@ -7,7 +7,6 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Toggle } from "@/components/ui/Toggle";
-import { createGameId } from "@/lib/utils/gameId";
 import { DEFAULT_GAME_SETTINGS, type GameSettings, type VotingSystem } from "@/lib/constants";
 
 export default function CreateGamePage() {
@@ -21,12 +20,30 @@ export default function CreateGamePage() {
     setIsLoading(true);
 
     try {
-      const gameId = createGameId();
+      const response = await fetch("/api/games", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: gameName || "Planning Session",
+          votingSystem: settings.votingSystem,
+          whoCanReveal: settings.whoCanReveal,
+          whoCanManage: settings.whoCanManage,
+          autoReveal: settings.autoReveal,
+          funFeatures: settings.funFeatures,
+          showAverage: settings.showAverage,
+          showCountdown: settings.showCountdown,
+        }),
+      });
 
-      // TODO: Save game to Supabase
-      // For now, just redirect to join page
-      router.push(`/game/${gameId}/join?host=true&name=${encodeURIComponent(gameName || "Planning Session")}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create game");
+      }
+
+      const game = await response.json();
+      router.push(`/game/${game.id}/join?host=true`);
     } catch (error) {
+      // TODO: Show error toast
       setIsLoading(false);
     }
   };

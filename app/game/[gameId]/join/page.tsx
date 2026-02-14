@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Toggle } from "@/components/ui/Toggle";
 import { AVATAR_OPTIONS } from "@/lib/constants";
-import { createPlayerId } from "@/lib/utils/gameId";
 import { usePlayerStore } from "@/lib/store/playerStore";
 
 export default function JoinGamePage() {
@@ -34,22 +33,51 @@ export default function JoinGamePage() {
     setIsLoading(true);
 
     try {
-      const playerId = createPlayerId();
-
-      // Store player in local state
-      setCurrentPlayer({
-        id: playerId,
-        game_id: gameId,
-        name: playerName.trim(),
-        avatar: selectedAvatar,
-        is_spectator: isSpectator,
-        is_online: true,
-        last_seen: new Date().toISOString(),
-        created_at: new Date().toISOString(),
+      // Save player to Supabase
+      const response = await fetch("/api/players", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          gameId,
+          name: playerName.trim(),
+          avatar: selectedAvatar,
+          isSpectator,
+        }),
       });
 
-      // TODO: Save player to Supabase
-      // For now, just redirect to game room
+      if (!response.ok) {
+        throw new Error("Failed to join game");
+      }
+
+      const player = await response.json();
+
+      // Store player in local state
+      setCurrentPlayer(player);
+
+      // If host, create a default issue and set up game
+      if (isHost) {
+        const issueResponse = await fetch("/api/issues", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            gameId,
+            title: "Story 1",
+          }),
+        });
+
+        const issue = await issueResponse.json();
+
+        // Set host player ID and current issue on game
+        await fetch(`/api/games/${gameId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            hostPlayerId: player.id,
+            currentIssueId: issue.id,
+          }),
+        });
+      }
+
       router.push(`/game/${gameId}`);
     } catch (error) {
       setIsLoading(false);

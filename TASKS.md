@@ -26,7 +26,7 @@
 - [x] Initialize Next.js 14 project with TypeScript
 - [x] Configure Tailwind CSS with light theme (Appinium colors)
 - [x] Set up project folder structure
-- [ ] Create Supabase project and get credentials
+- [x] Create Supabase project and get credentials
 - [x] Configure environment variables (.env.local.example)
 - [x] Set up ESLint + Prettier
 - [x] Create base layout component with Appinium colors
@@ -39,18 +39,18 @@
 > Backend infrastructure
 
 - [x] Write SQL migrations for all tables (games, players, issues, votes, confidence_votes)
-- [ ] Run migrations in Supabase
+- [x] Run migrations in Supabase
 - [x] Enable Row Level Security with public policies (in migration)
 - [x] Enable Realtime on required tables (in migration)
 - [x] Generate TypeScript types from Supabase schema (manual types)
 - [x] Create Supabase client (browser + server)
-- [ ] Implement API route: POST `/api/games` (create game)
-- [ ] Implement API route: GET `/api/games/[id]` (get game)
-- [ ] Implement API route: PATCH `/api/games/[id]` (update game status)
-- [ ] Implement API route: POST `/api/players` (join game)
-- [ ] Implement API route: POST `/api/votes` (submit vote)
-- [ ] Implement API route: DELETE `/api/votes` (clear votes)
-- [ ] Implement API routes for issues CRUD
+- [x] Implement API route: POST `/api/games` (create game)
+- [x] Implement API route: GET `/api/games/[id]` (get game)
+- [x] Implement API route: PATCH `/api/games/[id]` (update game status)
+- [x] Implement API route: POST `/api/players` (join game)
+- [x] Implement API route: POST `/api/votes` (submit vote)
+- [x] Implement API route: DELETE `/api/votes` (clear votes)
+- [x] Implement API routes for issues CRUD
 
 ---
 
@@ -115,29 +115,29 @@
 
 ---
 
-## Milestone 7: Real-time Sync
+## Milestone 7: Real-time Sync ✅
 > Live updates for all players
 
-- [ ] Create useGame hook with Supabase Realtime subscription
-- [ ] Subscribe to players table changes (join/leave)
-- [ ] Subscribe to votes table changes (vote status)
-- [ ] Subscribe to games table changes (reveal status)
-- [ ] Subscribe to issues table changes
-- [ ] Update Zustand store on realtime events
+- [x] Create useGame hook with Supabase Realtime subscription
+- [x] Subscribe to players table changes (join/leave)
+- [x] Subscribe to votes table changes (vote status)
+- [x] Subscribe to games table changes (reveal status)
+- [x] Subscribe to issues table changes
+- [x] Update Zustand store on realtime events
 - [ ] Handle player disconnect/reconnect
 - [ ] Show online/offline status for players
 
 ---
 
-## Milestone 8: Voting Flow
+## Milestone 8: Voting Flow ✅
 > Cast and reveal votes
 
-- [ ] Clicking card → POST vote to API
+- [x] Clicking card → POST vote to API
 - [x] Show card back for players who voted
 - [x] Show "waiting" state for players who haven't voted
-- [ ] Auto-reveal option: trigger when all non-spectators voted
+- [x] Auto-reveal option: trigger when all non-spectators voted
 - [x] Manual reveal: click Reveal button
-- [ ] Countdown animation before reveal (3-2-1)
+- [x] Countdown animation before reveal (3-2-1)
 - [x] Flip all cards simultaneously
 - [x] Show vote values on player cards
 - [x] Calculate and display average

@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Users, Copy, Check } from "lucide-react";
+import { Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { VOTING_CARDS } from "@/lib/constants";
 import { usePlayerStore } from "@/lib/store/playerStore";
 import { useGameStore } from "@/lib/store/gameStore";
+import { useGameRealtime } from "@/lib/hooks/useGameRealtime";
+import { calculateAverage } from "@/lib/utils/calculations";
 import Image from "next/image";
 
 export default function GameRoomPage() {
@@ -18,11 +20,75 @@ export default function GameRoomPage() {
   const myVote = usePlayerStore((state) => state.myVote);
   const setMyVote = usePlayerStore((state) => state.setMyVote);
 
+  const game = useGameStore((state) => state.game);
+  const players = useGameStore((state) => state.players);
+  const votes = useGameStore((state) => state.votes);
   const isRevealed = useGameStore((state) => state.isRevealed);
-  const setRevealed = useGameStore((state) => state.setRevealed);
 
   const [copied, setCopied] = useState(false);
   const [showConfidence, setShowConfidence] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [isRevealing, setIsRevealing] = useState(false);
+  const countdownStartedRef = useRef(false);
+
+  // Subscribe to realtime updates
+  useGameRealtime(gameId);
+
+  // Check if all non-spectators have voted
+  const votingPlayers = players.filter((p) => !p.is_spectator);
+  const allVoted = votingPlayers.length > 0 &&
+    votingPlayers.every((p) =>
+      votes.some((v) => v.player_id === p.id) ||
+      (p.id === currentPlayer?.id && myVote)
+    );
+
+  // Reset when game resets to voting (new round)
+  useEffect(() => {
+    if (!isRevealed && game?.status === "voting") {
+      countdownStartedRef.current = false;
+      setMyVote(null); // Clear local vote for all users
+    }
+  }, [isRevealed, game?.status, setMyVote]);
+
+  // Auto-reveal when all voted (if enabled)
+  useEffect(() => {
+    if (!game?.auto_reveal || isRevealed || !allVoted || countdownStartedRef.current) return;
+
+    // Mark as started to prevent double trigger
+    countdownStartedRef.current = true;
+    setCountdown(3);
+  }, [game?.auto_reveal, isRevealed, allVoted]);
+
+  // Countdown timer
+  useEffect(() => {
+    if (countdown === null) return;
+
+    if (countdown === 0) {
+      setCountdown(null);
+      setIsRevealing(true); // Prevent flash between countdown and reveal
+      // Call reveal API
+      fetch(`/api/games/${gameId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "revealed" }),
+      });
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setCountdown((c) => (c !== null ? c - 1 : null));
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [countdown, gameId]);
+
+  // Clear isRevealing when actually revealed
+  useEffect(() => {
+    if (isRevealed) {
+      setIsRevealing(false);
+    }
+  }, [isRevealed]);
 
   // Redirect to join if no player
   useEffect(() => {
@@ -31,14 +97,6 @@ export default function GameRoomPage() {
     }
   }, [currentPlayer, gameId, router]);
 
-  // Mock players for demo
-  const players = [
-    currentPlayer,
-    { id: "2", name: "Sarah", avatar: "https://randomuser.me/api/portraits/women/44.jpg", vote: "5" },
-    { id: "3", name: "Mike", avatar: "https://randomuser.me/api/portraits/men/22.jpg", vote: "8" },
-    { id: "4", name: "Anna", avatar: "https://randomuser.me/api/portraits/women/68.jpg", vote: null },
-  ].filter(Boolean);
-
   const handleCopyLink = async () => {
     const url = `${window.location.origin}/game/${gameId}/join`;
     await navigator.clipboard.writeText(url);
@@ -46,19 +104,84 @@ export default function GameRoomPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleReveal = () => {
-    setRevealed(true);
+  const handleReveal = async () => {
+    setIsLoading(true);
+    try {
+      await fetch(`/api/games/${gameId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "revealed" }),
+      });
+    } catch (error) {
+      // Error handled by realtime
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleNewRound = () => {
-    setRevealed(false);
-    setMyVote(null);
+  const handleNewRound = async () => {
+    setIsLoading(true);
+    try {
+      // Clear votes from database
+      if (game?.current_issue_id) {
+        await fetch(`/api/votes?issueId=${game.current_issue_id}`, {
+          method: "DELETE",
+        });
+      }
+
+      // Reset game status
+      await fetch(`/api/games/${gameId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "voting" }),
+      });
+
+      // Clear local vote
+      setMyVote(null);
+
+      // Clear votes in store
+      useGameStore.getState().clearVotes();
+    } catch (error) {
+      // Error handled by realtime
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleCardSelect = (value: string) => {
-    if (isRevealed) return;
-    setMyVote(myVote === value ? null : value);
+  const handleCardSelect = async (value: string) => {
+    if (isRevealed || !currentPlayer || !game?.current_issue_id) return;
+
+    const newVote = myVote === value ? null : value;
+    setMyVote(newVote);
+
+    if (newVote) {
+      try {
+        await fetch("/api/votes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            issueId: game.current_issue_id,
+            playerId: currentPlayer.id,
+            value: newVote,
+          }),
+        });
+      } catch (error) {
+        // Revert on error
+        setMyVote(myVote);
+      }
+    }
   };
+
+  // Get vote for a player
+  const getPlayerVote = (playerId: string) => {
+    return votes.find((v) => v.player_id === playerId)?.value ?? null;
+  };
+
+  // Calculate average from revealed votes
+  const average = isRevealed ? calculateAverage(votes) : null;
+
+  // Check if at least one player has voted
+  const hasVotes = votes.length > 0 || myVote;
 
   if (!currentPlayer) {
     return null;
@@ -125,48 +248,65 @@ export default function GameRoomPage() {
           <div className="bg-[var(--primary-light)] border-4 border-[var(--primary)]/20 rounded-[100px] h-64 flex items-center justify-center">
             {/* Center content */}
             <div className="text-center">
-              {isRevealed ? (
+              {countdown !== null || isRevealing ? (
+                <div className="space-y-2">
+                  <div className="text-6xl font-bold text-[var(--primary)] animate-pulse">
+                    {countdown !== null ? countdown : "..."}
+                  </div>
+                  <div className="text-sm text-[var(--text-secondary)]">
+                    Revealing...
+                  </div>
+                </div>
+              ) : isRevealed ? (
                 <div className="space-y-4">
                   <div className="text-4xl font-bold text-[var(--primary)]">
-                    Average: 6.5
+                    {average !== null ? `Average: ${average}` : "No votes"}
                   </div>
-                  <Button onClick={handleNewRound}>
+                  <Button onClick={handleNewRound} isLoading={isLoading}>
                     Start New Round
                   </Button>
                 </div>
               ) : (
-                <Button
-                  size="lg"
-                  onClick={handleReveal}
-                  disabled={!myVote}
-                >
-                  Reveal Cards
-                </Button>
+                <div className="space-y-2">
+                  <Button
+                    size="lg"
+                    onClick={() => game?.show_countdown ? setCountdown(3) : handleReveal()}
+                    disabled={!hasVotes}
+                    isLoading={isLoading}
+                  >
+                    Reveal Cards
+                  </Button>
+                  {allVoted && (
+                    <div className="text-sm text-[var(--success)] font-medium">
+                      ✓ All voted!
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>
 
           {/* Players around table */}
           <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex gap-8">
-            {players.slice(0, 2).map((player, i) => (
+            {players.slice(0, Math.ceil(players.length / 2)).map((player) => (
               <PlayerSeat
-                key={player?.id || i}
+                key={player.id}
                 player={player}
+                vote={player.id === currentPlayer?.id ? myVote : getPlayerVote(player.id)}
                 isRevealed={isRevealed}
-                isCurrentPlayer={player?.id === currentPlayer.id}
-                myVote={myVote}
+                isCurrentPlayer={player.id === currentPlayer?.id}
               />
             ))}
           </div>
 
           <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 flex gap-8">
-            {players.slice(2, 4).map((player, i) => (
+            {players.slice(Math.ceil(players.length / 2)).map((player) => (
               <PlayerSeat
-                key={player?.id || i}
+                key={player.id}
                 player={player}
+                vote={player.id === currentPlayer?.id ? myVote : getPlayerVote(player.id)}
                 isRevealed={isRevealed}
-                isCurrentPlayer={player?.id === currentPlayer.id}
-                myVote={myVote}
+                isCurrentPlayer={player.id === currentPlayer?.id}
               />
             ))}
           </div>
@@ -240,19 +380,16 @@ export default function GameRoomPage() {
 // Player seat component
 function PlayerSeat({
   player,
+  vote,
   isRevealed,
   isCurrentPlayer,
-  myVote,
 }: {
-  player: { id: string; name: string; avatar: string | null; vote?: string | null } | null;
+  player: { id: string; name: string; avatar: string | null };
+  vote: string | null;
   isRevealed: boolean;
   isCurrentPlayer: boolean;
-  myVote: string | null;
 }) {
-  if (!player) return null;
-
-  const vote = isCurrentPlayer ? myVote : player.vote;
-  const hasVoted = vote !== null && vote !== undefined;
+  const hasVoted = vote !== null;
 
   return (
     <div className="flex flex-col items-center gap-2">
@@ -263,18 +400,17 @@ function PlayerSeat({
           transition-all duration-300
           ${
             hasVoted
-              ? isRevealed
-                ? "bg-[var(--primary)] text-white"
-                : "bg-[var(--primary)] text-white"
+              ? "bg-[var(--primary)] text-white"
               : "bg-[var(--border)] text-transparent"
           }
+          ${isCurrentPlayer ? "ring-2 ring-[var(--accent)]" : ""}
         `}
       >
         {isRevealed && hasVoted ? vote : hasVoted ? "✓" : "?"}
       </div>
 
       {/* Avatar + Name */}
-      <div className="flex items-center gap-2 px-2 py-1 bg-white rounded-full shadow-sm">
+      <div className={`flex items-center gap-2 px-2 py-1 rounded-full shadow-sm ${isCurrentPlayer ? "bg-[var(--primary-light)]" : "bg-white"}`}>
         <div className="w-6 h-6 rounded-full overflow-hidden">
           <Image
             src={player.avatar || "https://randomuser.me/api/portraits/men/32.jpg"}
