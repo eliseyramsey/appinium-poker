@@ -4,6 +4,7 @@
 export type GameStatus = "voting" | "revealed";
 export type IssueStatus = "pending" | "voting" | "voted";
 export type Permission = "all" | "moderator";
+export type ConfidenceStatus = "idle" | "voting" | "revealed";
 
 export interface Game {
   id: string;
@@ -18,6 +19,8 @@ export interface Game {
   host_player_id: string | null;
   current_issue_id: string | null;
   status: GameStatus;
+  creator_id: string | null;
+  confidence_status: ConfidenceStatus;
   created_at: string;
 }
 
@@ -74,6 +77,8 @@ export type GameInsert = {
   host_player_id?: string | null;
   current_issue_id?: string | null;
   status?: GameStatus;
+  creator_id?: string | null;
+  confidence_status?: ConfidenceStatus;
 };
 
 export type PlayerInsert = {

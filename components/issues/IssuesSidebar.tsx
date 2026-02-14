@@ -1,19 +1,21 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Plus, Trash2, Edit2, Check, X, ListTodo } from "lucide-react";
+import { Plus, Trash2, Edit2, Check, X, ListTodo, Hand } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useGameStore } from "@/lib/store/gameStore";
+import { usePlayerStore } from "@/lib/store/playerStore";
 import type { Issue } from "@/lib/supabase/types";
 
 interface IssuesSidebarProps {
   gameId: string;
   isOpen: boolean;
   onClose: () => void;
+  onConfidenceVote?: () => void;
 }
 
-export function IssuesSidebar({ gameId, isOpen, onClose }: IssuesSidebarProps) {
+export function IssuesSidebar({ gameId, isOpen, onClose, onConfidenceVote }: IssuesSidebarProps) {
   const [newIssueTitle, setNewIssueTitle] = useState("");
   const [isAddingIssue, setIsAddingIssue] = useState(false);
   const [editingIssueId, setEditingIssueId] = useState<string | null>(null);
@@ -22,7 +24,15 @@ export function IssuesSidebar({ gameId, isOpen, onClose }: IssuesSidebarProps) {
 
   const issues = useGameStore((state) => state.issues);
   const game = useGameStore((state) => state.game);
+  const allIssuesEstimated = useGameStore((state) => state.allIssuesEstimated);
+  const averageConfidence = useGameStore((state) => state.averageConfidence);
+  const isAdmin = useGameStore((state) => state.isAdmin);
+  const currentPlayer = usePlayerStore((state) => state.currentPlayer);
+
   const currentIssueId = game?.current_issue_id;
+  const canStartConfidenceVote = allIssuesEstimated() && issues.length > 0;
+  const isPlayerAdmin = isAdmin(currentPlayer?.id ?? null);
+  const confidenceAvg = averageConfidence();
 
   const totalPoints = issues.reduce((sum, issue) => sum + (issue.final_score || 0), 0);
   const votedCount = issues.filter((i) => i.status === "voted").length;
@@ -47,12 +57,16 @@ export function IssuesSidebar({ gameId, isOpen, onClose }: IssuesSidebarProps) {
   };
 
   const handleSelectIssue = async (issueId: string) => {
-    if (issueId === currentIssueId) return;
+    if (issueId === currentIssueId || !isPlayerAdmin) return;
     try {
       await fetch(`/api/games/${gameId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentIssueId: issueId, status: "voting" }),
+        body: JSON.stringify({
+          currentIssueId: issueId,
+          status: "voting",
+          playerId: currentPlayer?.id
+        }),
       });
     } catch {
       // Silent
@@ -129,25 +143,27 @@ export function IssuesSidebar({ gameId, isOpen, onClose }: IssuesSidebarProps) {
           </div>
         </div>
 
-        {/* Add issue form */}
-        <form onSubmit={handleAddIssue} className="p-4 border-b border-[var(--border)]">
-          <div className="flex gap-2">
-            <Input
-              placeholder="Add an issue..."
-              value={newIssueTitle}
-              onChange={(e) => setNewIssueTitle(e.target.value)}
-              className="flex-1"
-            />
-            <Button
-              type="submit"
-              size="sm"
-              disabled={!newIssueTitle.trim()}
-              isLoading={isAddingIssue}
-            >
-              <Plus size={16} />
-            </Button>
-          </div>
-        </form>
+        {/* Add issue form (admin only) */}
+        {isPlayerAdmin && (
+          <form onSubmit={handleAddIssue} className="p-4 border-b border-[var(--border)]">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Add an issue..."
+                value={newIssueTitle}
+                onChange={(e) => setNewIssueTitle(e.target.value)}
+                className="flex-1"
+              />
+              <Button
+                type="submit"
+                size="sm"
+                disabled={!newIssueTitle.trim()}
+                isLoading={isAddingIssue}
+              >
+                <Plus size={16} />
+              </Button>
+            </div>
+          </form>
+        )}
 
         {/* Issues list */}
         <div className="flex-1 overflow-y-auto p-2 bg-white">
@@ -166,6 +182,7 @@ export function IssuesSidebar({ gameId, isOpen, onClose }: IssuesSidebarProps) {
                   isEditing={editingIssueId === issue.id}
                   editingTitle={editingTitle}
                   isDeleting={deletingIssueId === issue.id}
+                  isAdmin={isPlayerAdmin}
                   onSelect={() => handleSelectIssue(issue.id)}
                   onStartEdit={() => handleStartEdit(issue)}
                   onSaveEdit={handleSaveEdit}
@@ -177,6 +194,49 @@ export function IssuesSidebar({ gameId, isOpen, onClose }: IssuesSidebarProps) {
                 />
               ))}
             </div>
+          )}
+        </div>
+
+        {/* Confidence Vote Section */}
+        <div className="p-4 border-t border-[var(--border)] bg-[var(--bg-surface)]">
+          {/* Average Confidence Display - only show after reveal */}
+          {confidenceAvg !== null && game?.confidence_status === "revealed" && (
+            <div className="mb-3 text-center">
+              <span className="text-sm text-[var(--text-secondary)]">Team Confidence: </span>
+              <span className="font-mono font-bold text-lg text-[var(--primary)]">
+                {confidenceAvg.toFixed(1)}
+              </span>
+              <span className="text-sm text-[var(--text-secondary)]"> / 5</span>
+            </div>
+          )}
+
+          {/* Confidence Vote Button */}
+          <Button
+            onClick={onConfidenceVote}
+            disabled={!canStartConfidenceVote || !isPlayerAdmin}
+            className={`w-full ${!canStartConfidenceVote || !isPlayerAdmin ? "opacity-50 cursor-not-allowed" : ""}`}
+            variant="secondary"
+            title={
+              !canStartConfidenceVote
+                ? "Estimate all issues first"
+                : !isPlayerAdmin
+                ? "Only admin can start confidence vote"
+                : "Start Confidence Vote"
+            }
+          >
+            <Hand size={18} className="mr-2" />
+            Confidence Vote
+          </Button>
+
+          {!canStartConfidenceVote && issues.length > 0 && (
+            <p className="text-xs text-[var(--text-secondary)] text-center mt-2">
+              Estimate all issues to unlock
+            </p>
+          )}
+          {canStartConfidenceVote && !isPlayerAdmin && (
+            <p className="text-xs text-[var(--text-secondary)] text-center mt-2">
+              Only admin can start
+            </p>
           )}
         </div>
       </div>
@@ -192,6 +252,7 @@ interface IssueCardProps {
   isEditing: boolean;
   editingTitle: string;
   isDeleting: boolean;
+  isAdmin: boolean;
   onSelect: () => void;
   onStartEdit: () => void;
   onSaveEdit: () => void;
@@ -209,6 +270,7 @@ function IssueCard({
   isEditing,
   editingTitle,
   isDeleting,
+  isAdmin,
   onSelect,
   onStartEdit,
   onSaveEdit,
@@ -323,17 +385,19 @@ function IssueCard({
 
       <div className="flex items-center justify-between mt-2">
         {statusBadge()}
-        {!isEditing && (
+        {!isEditing && isAdmin && (
           <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={onStartEdit}
               className="p-1 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--primary-light)] rounded transition-colors"
+              title="Edit issue"
             >
               <Edit2 size={14} />
             </button>
             <button
               onClick={onDeleteClick}
               className="p-1 text-[var(--text-secondary)] hover:text-[var(--danger)] hover:bg-[var(--danger)]/10 rounded transition-colors"
+              title="Delete issue"
             >
               <Trash2 size={14} />
             </button>

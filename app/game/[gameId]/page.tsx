@@ -26,9 +26,16 @@ export default function GameRoomPage() {
   const votes = useGameStore((state) => state.votes);
   const isRevealed = useGameStore((state) => state.isRevealed);
   const currentIssue = useGameStore((state) => state.currentIssue);
+  const isAdmin = useGameStore((state) => state.isAdmin);
+  const confidenceVotes = useGameStore((state) => state.confidenceVotes);
+
+  const isPlayerAdmin = isAdmin(currentPlayer?.id ?? null);
+  const isConfidenceVoting = game?.confidence_status === "voting";
+  const isConfidenceRevealed = game?.confidence_status === "revealed";
 
   const [copied, setCopied] = useState(false);
   const [showConfidence, setShowConfidence] = useState(false);
+  const [hideConfidence, setHideConfidence] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isRevealing, setIsRevealing] = useState(false);
@@ -54,6 +61,13 @@ export default function GameRoomPage() {
     }
   }, [isRevealed, game?.status, setMyVote]);
 
+  // Show confidence modal for all when new confidence vote starts
+  useEffect(() => {
+    if (isConfidenceVoting) {
+      setHideConfidence(false);
+    }
+  }, [isConfidenceVoting]);
+
   // Auto-reveal when all voted (if enabled)
   useEffect(() => {
     if (!game?.auto_reveal || isRevealed || !allVoted || countdownStartedRef.current) return;
@@ -70,12 +84,14 @@ export default function GameRoomPage() {
     if (countdown === 0) {
       setCountdown(null);
       setIsRevealing(true); // Prevent flash between countdown and reveal
-      // Call reveal API
-      fetch(`/api/games/${gameId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "revealed" }),
-      });
+      // Call reveal API (only admin can reveal)
+      if (isPlayerAdmin) {
+        fetch(`/api/games/${gameId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "revealed", playerId: currentPlayer?.id }),
+        });
+      }
       return;
     }
 
@@ -108,12 +124,13 @@ export default function GameRoomPage() {
   };
 
   const handleReveal = async () => {
+    if (!isPlayerAdmin) return;
     setIsLoading(true);
     try {
       await fetch(`/api/games/${gameId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "revealed" }),
+        body: JSON.stringify({ status: "revealed", playerId: currentPlayer?.id }),
       });
     } catch (error) {
       // Error handled by realtime
@@ -123,6 +140,7 @@ export default function GameRoomPage() {
   };
 
   const handleNewRound = async () => {
+    if (!isPlayerAdmin) return;
     setIsLoading(true);
     try {
       // Clear votes from database
@@ -136,7 +154,7 @@ export default function GameRoomPage() {
       await fetch(`/api/games/${gameId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "voting" }),
+        body: JSON.stringify({ status: "voting", playerId: currentPlayer?.id }),
       });
 
       // Clear local vote
@@ -180,6 +198,64 @@ export default function GameRoomPage() {
     return votes.find((v) => v.player_id === playerId)?.value ?? null;
   };
 
+  // Get confidence vote for a player
+  const getPlayerConfidenceVote = (playerId: string) => {
+    return confidenceVotes.find((v) => v.player_id === playerId)?.value ?? null;
+  };
+
+  // Start confidence voting (admin only)
+  const handleStartConfidenceVote = async () => {
+    if (!isPlayerAdmin) return;
+    try {
+      // Clear previous votes
+      await fetch("/api/confidence", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameId, playerId: currentPlayer?.id }),
+      });
+
+      // Set status to voting
+      await fetch(`/api/games/${gameId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confidenceStatus: "voting", playerId: currentPlayer?.id }),
+      });
+
+      setHideConfidence(false);
+      setShowConfidence(true);
+    } catch (error) {
+      // Error handled silently
+    }
+  };
+
+  // Submit confidence vote
+  const handleConfidenceSubmit = async (value: number) => {
+    if (!currentPlayer) return;
+    try {
+      await fetch("/api/confidence", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameId, playerId: currentPlayer.id, value }),
+      });
+    } catch (error) {
+      // Error handled silently
+    }
+  };
+
+  // Reveal confidence votes (admin only)
+  const handleRevealConfidence = async () => {
+    if (!isPlayerAdmin) return;
+    try {
+      await fetch(`/api/games/${gameId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confidenceStatus: "revealed", playerId: currentPlayer?.id }),
+      });
+    } catch (error) {
+      // Error handled silently
+    }
+  };
+
   // Calculate average from revealed votes
   const average = isRevealed ? calculateAverage(votes) : null;
 
@@ -209,13 +285,12 @@ export default function GameRoomPage() {
 
             {/* Right: Controls */}
             <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowConfidence(true)}
-              >
-                ✊ Confidence
-              </Button>
+              {/* Admin badge */}
+              {isPlayerAdmin && (
+                <span className="px-2 py-1 text-xs font-medium bg-[var(--accent)]/20 text-[var(--accent-hover)] rounded">
+                  👑 Admin
+                </span>
+              )}
 
               <Button
                 variant="secondary"
@@ -276,20 +351,32 @@ export default function GameRoomPage() {
                   <div className="text-4xl font-bold text-[var(--primary)]">
                     {average !== null ? `Average: ${average}` : "No votes"}
                   </div>
-                  <Button onClick={handleNewRound} isLoading={isLoading}>
-                    Start New Round
-                  </Button>
+                  {isPlayerAdmin ? (
+                    <Button onClick={handleNewRound} isLoading={isLoading}>
+                      Start New Round
+                    </Button>
+                  ) : (
+                    <p className="text-sm text-[var(--text-secondary)]">
+                      Waiting for admin to start new round...
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <Button
-                    size="lg"
-                    onClick={() => game?.show_countdown ? setCountdown(3) : handleReveal()}
-                    disabled={!hasVotes}
-                    isLoading={isLoading}
-                  >
-                    Reveal Cards
-                  </Button>
+                  {isPlayerAdmin ? (
+                    <Button
+                      size="lg"
+                      onClick={() => game?.show_countdown ? setCountdown(3) : handleReveal()}
+                      disabled={!hasVotes}
+                      isLoading={isLoading}
+                    >
+                      Reveal Cards
+                    </Button>
+                  ) : (
+                    <p className="text-sm text-[var(--text-secondary)]">
+                      {hasVotes ? "Waiting for admin to reveal..." : "Cast your vote below"}
+                    </p>
+                  )}
                   {allVoted && (
                     <div className="text-sm text-[var(--success)] font-medium">
                       ✓ All voted!
@@ -309,6 +396,9 @@ export default function GameRoomPage() {
                 vote={player.id === currentPlayer?.id ? myVote : getPlayerVote(player.id)}
                 isRevealed={isRevealed}
                 isCurrentPlayer={player.id === currentPlayer?.id}
+                confidenceVote={getPlayerConfidenceVote(player.id)}
+                showConfidence={isConfidenceRevealed}
+                isCreator={game?.creator_id === player.id}
               />
             ))}
           </div>
@@ -321,6 +411,9 @@ export default function GameRoomPage() {
                 vote={player.id === currentPlayer?.id ? myVote : getPlayerVote(player.id)}
                 isRevealed={isRevealed}
                 isCurrentPlayer={player.id === currentPlayer?.id}
+                confidenceVote={getPlayerConfidenceVote(player.id)}
+                showConfidence={isConfidenceRevealed}
+                isCreator={game?.creator_id === player.id}
               />
             ))}
           </div>
@@ -357,35 +450,22 @@ export default function GameRoomPage() {
         </div>
       </div>
 
-        {/* Confidence Vote Modal */}
-        {showConfidence && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl p-6 max-w-md w-full">
-              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">
-                Confidence Vote
-              </h2>
-              <p className="text-[var(--text-secondary)] mb-6">
-                How confident are you in this sprint?
-              </p>
-              <div className="flex justify-center gap-4 mb-6">
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <button
-                    key={n}
-                    className="w-14 h-14 rounded-full bg-[var(--bg-surface)] text-2xl hover:bg-[var(--primary-light)] transition-colors"
-                  >
-                    {n === 1 ? "✊" : n === 2 ? "✌️" : n === 3 ? "🤟" : n === 4 ? "🖖" : "🖐️"}
-                  </button>
-                ))}
-              </div>
-              <Button
-                variant="secondary"
-                className="w-full"
-                onClick={() => setShowConfidence(false)}
-              >
-                Close
-              </Button>
-            </div>
-          </div>
+        {/* Confidence Vote Modal - shows for all when voting is active */}
+        {(showConfidence || (isConfidenceVoting && !hideConfidence)) && (
+          <ConfidenceVoteModal
+            isOpen={true}
+            isRevealed={isConfidenceRevealed}
+            isAdmin={isPlayerAdmin}
+            players={players}
+            confidenceVotes={confidenceVotes}
+            currentPlayerId={currentPlayer?.id ?? null}
+            onSubmit={handleConfidenceSubmit}
+            onReveal={handleRevealConfidence}
+            onClose={() => {
+              setShowConfidence(false);
+              setHideConfidence(true);
+            }}
+          />
         )}
       </div>
 
@@ -394,10 +474,20 @@ export default function GameRoomPage() {
         gameId={gameId}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        onConfidenceVote={handleStartConfidenceVote}
       />
     </div>
   );
 }
+
+// Confidence emojis mapping (Fist of Five)
+const CONFIDENCE_EMOJIS: Record<number, string> = {
+  1: "☝️",
+  2: "✌️",
+  3: "🤟",
+  4: "🖖",
+  5: "🖐️",
+};
 
 // Player seat component
 function PlayerSeat({
@@ -405,34 +495,56 @@ function PlayerSeat({
   vote,
   isRevealed,
   isCurrentPlayer,
+  confidenceVote,
+  showConfidence,
+  isCreator,
 }: {
   player: { id: string; name: string; avatar: string | null };
   vote: string | null;
   isRevealed: boolean;
   isCurrentPlayer: boolean;
+  confidenceVote?: number | null;
+  showConfidence?: boolean;
+  isCreator?: boolean;
 }) {
   const hasVoted = vote !== null;
+  const hasConfidenceVote = confidenceVote !== null && confidenceVote !== undefined;
 
   return (
     <div className="flex flex-col items-center gap-2">
-      {/* Card */}
+      {/* Card or Confidence Emoji */}
       <div
         className={`
           w-12 h-16 rounded-lg flex items-center justify-center font-mono font-bold
           transition-all duration-300
-          ${
-            hasVoted
+          ${showConfidence
+            ? hasConfidenceVote
+              ? "bg-[var(--accent)]/20 text-2xl"
+              : "bg-[var(--border)] text-transparent"
+            : hasVoted
               ? "bg-[var(--primary)] text-white"
               : "bg-[var(--border)] text-transparent"
           }
           ${isCurrentPlayer ? "ring-2 ring-[var(--accent)]" : ""}
         `}
       >
-        {isRevealed && hasVoted ? vote : hasVoted ? "✓" : "?"}
+        {showConfidence
+          ? hasConfidenceVote
+            ? CONFIDENCE_EMOJIS[confidenceVote!]
+            : "?"
+          : isRevealed && hasVoted
+            ? vote
+            : hasVoted
+              ? "✓"
+              : "?"
+        }
       </div>
 
       {/* Avatar + Name */}
       <div className={`flex items-center gap-2 px-2 py-1 rounded-full shadow-sm ${isCurrentPlayer ? "bg-[var(--primary-light)]" : "bg-white"}`}>
+        {isCreator && (
+          <span className="text-xs" title="Game Admin">👑</span>
+        )}
         <div className="w-6 h-6 rounded-full overflow-hidden">
           <Image
             src={player.avatar || "https://randomuser.me/api/portraits/men/32.jpg"}
@@ -445,6 +557,125 @@ function PlayerSeat({
         <span className="text-xs font-medium text-[var(--text-primary)]">
           {player.name}
         </span>
+      </div>
+    </div>
+  );
+}
+
+// Confidence Vote Modal
+function ConfidenceVoteModal({
+  isOpen,
+  isRevealed,
+  isAdmin,
+  players,
+  confidenceVotes,
+  currentPlayerId,
+  onSubmit,
+  onReveal,
+  onClose,
+}: {
+  isOpen: boolean;
+  isRevealed: boolean;
+  isAdmin: boolean;
+  players: { id: string; name: string; is_spectator: boolean }[];
+  confidenceVotes: { player_id: string; value: number }[];
+  currentPlayerId: string | null;
+  onSubmit: (value: number) => void;
+  onReveal: () => void;
+  onClose: () => void;
+}) {
+  const [selectedValue, setSelectedValue] = useState<number | null>(null);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+
+  // Check if current player already voted
+  const myVote = confidenceVotes.find((v) => v.player_id === currentPlayerId);
+  const allVoted = players.filter((p) => !p.is_spectator).every((p) =>
+    confidenceVotes.some((v) => v.player_id === p.id)
+  );
+
+  // Calculate average
+  const average = confidenceVotes.length > 0
+    ? (confidenceVotes.reduce((sum, v) => sum + v.value, 0) / confidenceVotes.length).toFixed(1)
+    : null;
+
+  const handleSubmit = async (value: number) => {
+    setSelectedValue(value);
+    setHasSubmitted(true);
+    await onSubmit(value);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+          ✊ Confidence Vote
+        </h2>
+        <p className="text-[var(--text-secondary)] mb-6">
+          {isRevealed
+            ? "Results are in!"
+            : "How confident are you in this sprint? You can change your vote anytime."
+          }
+        </p>
+
+        {/* Hand selection */}
+        <div className="flex justify-center gap-4 mb-6">
+          {[1, 2, 3, 4, 5].map((n) => {
+            const currentVote = selectedValue ?? myVote?.value;
+            const isSelected = currentVote === n;
+
+            return (
+              <button
+                key={n}
+                onClick={() => !isRevealed && handleSubmit(n)}
+                disabled={isRevealed}
+                className={`
+                  w-14 h-14 rounded-full text-2xl transition-all
+                  ${isSelected
+                    ? "bg-[var(--primary)] scale-110 ring-2 ring-[var(--primary)]"
+                    : "bg-[var(--bg-surface)] hover:bg-[var(--primary-light)]"
+                  }
+                  disabled:opacity-50 disabled:cursor-default
+                `}
+              >
+                {CONFIDENCE_EMOJIS[n]}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Vote status */}
+        <div className="text-center mb-4">
+          <span className="text-sm text-[var(--text-secondary)]">
+            {confidenceVotes.length} / {players.filter((p) => !p.is_spectator).length} voted
+          </span>
+        </div>
+
+        {/* Average (only when revealed) */}
+        {isRevealed && average && (
+          <div className="text-center mb-4 p-3 bg-[var(--primary-light)] rounded-lg">
+            <span className="text-sm text-[var(--text-secondary)]">Team Confidence: </span>
+            <span className="font-mono font-bold text-xl text-[var(--primary)]">{average}</span>
+            <span className="text-sm text-[var(--text-secondary)]"> / 5</span>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex gap-2">
+          {isAdmin && confidenceVotes.length > 0 && !isRevealed && (
+            <Button onClick={onReveal} className="flex-1">
+              Reveal Results
+            </Button>
+          )}
+          <Button
+            variant="secondary"
+            className={isAdmin && confidenceVotes.length > 0 && !isRevealed ? "" : "w-full"}
+            onClick={onClose}
+          >
+            {isRevealed ? "Close" : "Hide"}
+          </Button>
+        </div>
       </div>
     </div>
   );

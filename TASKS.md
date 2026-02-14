@@ -172,17 +172,63 @@
 
 ---
 
-## Milestone 11: Confidence Vote
+## Milestone 11: Confidence Vote ✅
 > Fist of Five for sprint commitment
 
-- [x] Create ConfidenceVote modal component
-- [x] Add "Confidence Vote" button in header/menu
-- [x] Build FistSelector (1-5 hands/numbers)
-- [ ] Submit confidence vote to API
-- [ ] Show all votes on reveal
-- [ ] Calculate and display team average
-- [ ] Distribution visualization (optional bar chart)
-- [x] Separate from story point voting
+**UI:**
+- [x] Move "Confidence Vote" button to Issues Sidebar (below issues list)
+- [x] Button disabled (grey) until ALL issues are estimated
+- [x] Show average confidence (number) below Issues section
+
+**Voting Flow:**
+- [x] Click button → modal appears for ALL players simultaneously
+- [x] FistSelector with hand emojis (✊👆✌️🤟🖐️ = 1-5)
+- [x] Votes hidden until everyone voted (like card voting)
+- [x] On reveal: show hand emoji next to each avatar (instead of cards)
+
+**API:**
+- [x] POST `/api/confidence` — submit confidence vote
+- [x] DELETE `/api/confidence` — reset all votes (for re-vote)
+- [x] GET `/api/confidence` — get all votes for a game
+- [x] Calculate and store average confidence
+
+**Realtime:**
+- [x] Subscribe to confidence_votes table changes
+- [x] Sync confidence_status via games table
+- [x] Update player emojis in realtime
+
+**Re-voting:**
+- [x] Button can be clicked again to trigger new vote
+- [x] Clears all previous confidence votes (admin only)
+
+---
+
+## Milestone 11.5: Admin Permissions ✅
+> Only game creator can perform global actions
+
+**Database:**
+- [x] Add `creator_id` field to `games` table (migration 002)
+- [x] Add `confidence_status` field to `games` table
+- [x] Store creator_id when first player joins game
+
+**Restricted Actions (admin only):**
+- [x] Reveal cards
+- [x] Start new voting round
+- [x] Set current issue for voting
+- [x] Delete issues
+- [x] Trigger Confidence Vote
+- [x] Reset Confidence Vote
+
+**UI:**
+- [x] Show admin badge (👑) next to creator's avatar
+- [x] Hide reveal/new round buttons for non-admins
+- [x] Show "Only admin can start" message for disabled actions
+- [x] Admin badge in header
+
+**API:**
+- [x] Validate admin permissions in PATCH /api/games
+- [x] Validate admin permissions in DELETE /api/confidence
+- [x] Return 403 Forbidden for unauthorized actions
 
 ---
 

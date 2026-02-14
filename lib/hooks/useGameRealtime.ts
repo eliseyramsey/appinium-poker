@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase/client";
 import { useGameStore } from "@/lib/store/gameStore";
-import type { Game, Player, Vote, Issue } from "@/lib/supabase/types";
+import type { Game, Player, Vote, Issue, ConfidenceVote } from "@/lib/supabase/types";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 export function useGameRealtime(gameId: string | null) {
@@ -63,6 +63,16 @@ export function useGameRealtime(gameId: string | null) {
         if (votes) {
           store.setVotes(votes as Vote[]);
         }
+      }
+
+      // Fetch confidence votes
+      const { data: confidenceVotes } = await supabase
+        .from("confidence_votes")
+        .select("*")
+        .eq("game_id", gameId);
+
+      if (confidenceVotes) {
+        store.setConfidenceVotes(confidenceVotes as ConfidenceVote[]);
       }
     };
 
@@ -131,6 +141,25 @@ export function useGameRealtime(gameId: string | null) {
           } else if (payload.eventType === "DELETE") {
             const old = payload.old as { id?: string };
             if (old?.id) state.removeIssue(old.id);
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "confidence_votes", filter: `game_id=eq.${gameId}` },
+        (payload) => {
+          const state = useGameStore.getState();
+          if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+            state.addConfidenceVote(payload.new as ConfidenceVote);
+          } else if (payload.eventType === "DELETE") {
+            // Refetch all confidence votes on delete (simpler than tracking individual deletes)
+            supabase
+              .from("confidence_votes")
+              .select("*")
+              .eq("game_id", gameId)
+              .then(({ data }) => {
+                if (data) state.setConfidenceVotes(data as ConfidenceVote[]);
+              });
           }
         }
       )

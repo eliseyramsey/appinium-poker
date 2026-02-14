@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Game, Player, Issue, Vote } from "@/lib/supabase/types";
+import type { Game, Player, Issue, Vote, ConfidenceVote, ConfidenceStatus } from "@/lib/supabase/types";
 
 interface GameState {
   // Data
@@ -7,6 +7,7 @@ interface GameState {
   players: Player[];
   issues: Issue[];
   votes: Vote[];
+  confidenceVotes: ConfidenceVote[];
 
   // Computed
   currentIssue: Issue | null;
@@ -25,7 +26,16 @@ interface GameState {
   addVote: (vote: Vote) => void;
   clearVotes: () => void;
   setRevealed: (revealed: boolean) => void;
+  setConfidenceVotes: (votes: ConfidenceVote[]) => void;
+  addConfidenceVote: (vote: ConfidenceVote) => void;
+  clearConfidenceVotes: () => void;
+  setConfidenceStatus: (status: ConfidenceStatus) => void;
   reset: () => void;
+
+  // Selectors
+  isAdmin: (playerId: string | null) => boolean;
+  allIssuesEstimated: () => boolean;
+  averageConfidence: () => number | null;
 }
 
 const initialState = {
@@ -33,6 +43,7 @@ const initialState = {
   players: [],
   issues: [],
   votes: [],
+  confidenceVotes: [],
   currentIssue: null,
   isRevealed: false,
 };
@@ -102,5 +113,42 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   setRevealed: (revealed) => set({ isRevealed: revealed }),
 
+  setConfidenceVotes: (confidenceVotes) => set({ confidenceVotes }),
+
+  addConfidenceVote: (vote) =>
+    set((state) => ({
+      confidenceVotes: [
+        ...state.confidenceVotes.filter((v) => v.player_id !== vote.player_id),
+        vote,
+      ],
+    })),
+
+  clearConfidenceVotes: () => set({ confidenceVotes: [] }),
+
+  setConfidenceStatus: (status) =>
+    set((state) => ({
+      game: state.game ? { ...state.game, confidence_status: status } : null,
+    })),
+
   reset: () => set(initialState),
+
+  // Selectors
+  isAdmin: (playerId) => {
+    const { game } = get();
+    if (!game || !playerId) return false;
+    return game.creator_id === playerId;
+  },
+
+  allIssuesEstimated: () => {
+    const { issues } = get();
+    if (issues.length === 0) return false;
+    return issues.every((issue) => issue.status === "voted" && issue.final_score !== null);
+  },
+
+  averageConfidence: () => {
+    const { confidenceVotes } = get();
+    if (confidenceVotes.length === 0) return null;
+    const sum = confidenceVotes.reduce((acc, v) => acc + v.value, 0);
+    return Math.round((sum / confidenceVotes.length) * 10) / 10;
+  },
 }));

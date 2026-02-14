@@ -99,44 +99,6 @@ export default function CreateGamePage() {
             {/* Divider */}
             <hr className="border-[var(--border)]" />
 
-            {/* Permissions */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide">
-                Permissions
-              </h3>
-
-              <div>
-                <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">
-                  Who can reveal cards?
-                </label>
-                <select
-                  value={settings.whoCanReveal}
-                  onChange={(e) => updateSetting("whoCanReveal", e.target.value as "all" | "moderator")}
-                  className="w-full px-4 py-2.5 bg-white border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                >
-                  <option value="all">All players</option>
-                  <option value="moderator">Moderator only</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">
-                  Who can manage issues?
-                </label>
-                <select
-                  value={settings.whoCanManage}
-                  onChange={(e) => updateSetting("whoCanManage", e.target.value as "all" | "moderator")}
-                  className="w-full px-4 py-2.5 bg-white border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                >
-                  <option value="all">All players</option>
-                  <option value="moderator">Moderator only</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Divider */}
-            <hr className="border-[var(--border)]" />
-
             {/* Options */}
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide">

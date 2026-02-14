@@ -50,6 +50,8 @@ interface UpdateGameBody {
   status?: GameStatus;
   currentIssueId?: string | null;
   hostPlayerId?: string | null;
+  confidenceStatus?: "idle" | "voting" | "revealed";
+  playerId?: string; // For admin check
 }
 
 // Helper to calculate average from votes
@@ -78,6 +80,27 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const body = (await request.json()) as UpdateGameBody;
     const supabase = getSupabase();
 
+    // Get game to check creator_id for admin operations
+    const { data: existingGame } = await supabase
+      .from("games")
+      .select("creator_id, current_issue_id")
+      .eq("id", gameId)
+      .single();
+
+    const gameInfo = existingGame as { creator_id: string | null; current_issue_id: string | null } | null;
+
+    // Admin-only operations: reveal, new round, set current issue, confidence vote
+    const isAdminAction = body.status !== undefined ||
+                          body.currentIssueId !== undefined ||
+                          body.confidenceStatus !== undefined;
+
+    if (isAdminAction && gameInfo?.creator_id && body.playerId !== gameInfo.creator_id) {
+      return NextResponse.json(
+        { error: "Only the game creator can perform this action" },
+        { status: 403 }
+      );
+    }
+
     // Build update object
     const updateData: GameUpdate = {};
 
@@ -89,6 +112,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
     if (body.hostPlayerId !== undefined) {
       updateData.host_player_id = body.hostPlayerId;
+    }
+    if (body.confidenceStatus !== undefined) {
+      (updateData as Record<string, unknown>).confidence_status = body.confidenceStatus;
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -111,14 +137,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     // If revealing, calculate and save final score to current issue
     if (body.status === "revealed") {
-      // Get current game to find current_issue_id
-      const { data: gameData } = await supabase
-        .from("games")
-        .select("current_issue_id")
-        .eq("id", gameId)
-        .single();
-
-      const currentIssueId = (gameData as { current_issue_id: string | null } | null)?.current_issue_id;
+      const currentIssueId = gameInfo?.current_issue_id;
 
       if (currentIssueId) {
         // Get all votes for this issue

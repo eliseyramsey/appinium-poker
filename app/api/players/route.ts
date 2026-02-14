@@ -34,10 +34,10 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabase();
     const playerId = createPlayerId();
 
-    // Check if game exists
+    // Check if game exists and get creator_id
     const { data: game, error: gameError } = await supabase
       .from("games")
-      .select("id")
+      .select("id, creator_id")
       .eq("id", body.gameId)
       .single();
 
@@ -47,6 +47,8 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    const gameData = game as { id: string; creator_id: string | null };
 
     // Create player
     const playerData: PlayerInsert = {
@@ -67,7 +69,18 @@ export async function POST(request: NextRequest) {
       throw error;
     }
 
-    return NextResponse.json(data, { status: 201 });
+    // If no creator yet, set this player as creator (first player = admin)
+    if (!gameData.creator_id) {
+      await supabase
+        .from("games")
+        .update({ creator_id: playerId } as never)
+        .eq("id", body.gameId);
+    }
+
+    // Return player with isCreator flag
+    const isCreator = !gameData.creator_id;
+    const responseData = { ...(data as Record<string, unknown>), isCreator };
+    return NextResponse.json(responseData, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
