@@ -91,8 +91,11 @@ confidence_votes — Fist of Five votes per sprint
 
 ### Key Fields
 - `games.status`: `'voting'` | `'revealed'`
+- `games.creator_id`: player ID of admin (first to join)
+- `games.confidence_status`: `'idle'` | `'voting'` | `'revealed'`
 - `votes.value`: `'0'` | `'1'` | `'2'` | ... | `'?'` | `'coffee'`
 - `confidence_votes.value`: `1-5`
+- `confidence_votes`: UNIQUE(game_id, player_id)
 
 ### Relationships
 ```
@@ -160,12 +163,14 @@ Custom hooks in `lib/hooks/`:
 |----------|--------|---------|
 | `/api/games` | POST | Create game |
 | `/api/games/[id]` | GET | Get game details |
-| `/api/games/[id]` | PATCH | Update (reveal, settings) |
-| `/api/players` | POST | Join game |
+| `/api/games/[id]` | PATCH | Update (reveal, settings) — admin only |
+| `/api/players` | POST | Join game (first player = admin) |
 | `/api/votes` | POST | Submit vote |
 | `/api/votes` | DELETE | Clear votes (new round) |
-| `/api/issues` | CRUD | Manage issues |
+| `/api/issues` | CRUD | Manage issues (admin only) |
+| `/api/confidence` | GET | Get confidence votes for game |
 | `/api/confidence` | POST | Submit confidence vote |
+| `/api/confidence` | DELETE | Clear all votes (admin only) |
 
 ---
 
@@ -346,3 +351,55 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 2. Milestone 11: Confidence Vote API
 3. Milestone 12: Meme System
 4. Deploy to Vercel
+
+---
+
+### 2026-02-14: Admin Permissions & Confidence Vote (Session 3)
+
+**Completed:**
+- Implemented Admin Permissions (Milestone 11.5):
+  - Added `creator_id` field to games table (first player = admin)
+  - Added `confidence_status` field for confidence vote state
+  - Admin-only actions: reveal, new round, select issue, add/edit/delete issues
+  - Admin badge (👑) shown next to creator's avatar and in header
+  - API validates admin permissions, returns 403 for unauthorized
+  - Removed Permissions section from game creation form (automatic)
+
+- Implemented Confidence Vote (Milestone 11):
+  - Button in Issues Sidebar (disabled until all issues estimated)
+  - Modal appears for ALL players when admin starts vote
+  - Hand emojis for voting: ☝️✌️🤟🖖🖐️ (1-5)
+  - Can change vote before reveal
+  - Votes hidden until admin reveals
+  - Average shown only after reveal
+  - Realtime sync via confidence_votes table subscription
+
+**Database Migration (002_add_creator_id.sql):**
+```sql
+ALTER TABLE games ADD COLUMN creator_id TEXT;
+ALTER TABLE games ADD COLUMN confidence_status TEXT DEFAULT 'idle';
+ALTER TABLE confidence_votes ADD CONSTRAINT confidence_votes_unique UNIQUE (game_id, player_id);
+ALTER PUBLICATION supabase_realtime ADD TABLE confidence_votes;
+```
+
+**API Changes:**
+- `POST /api/confidence` — submit confidence vote (upsert)
+- `GET /api/confidence?gameId=` — get votes for game
+- `DELETE /api/confidence` — clear all votes (admin only)
+- `PATCH /api/games/[id]` — checks playerId for admin actions
+
+**Technical Notes:**
+- `hideConfidence` state allows users to hide modal locally
+- `useEffect` on `isConfidenceVoting` reopens modal for all when new vote starts
+- Confidence emojis stored in `CONFIDENCE_EMOJIS` constant
+- `allIssuesEstimated()` selector in gameStore checks if button should be enabled
+
+**Current State:**
+- Milestones 11, 11.5 complete
+- Admin system working
+- Confidence vote fully functional with realtime sync
+
+**Next Steps:**
+1. Milestone 12: Meme System
+2. Milestone 13: Polish & UX
+3. Deploy to Vercel
