@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appinium Poker - Clean Light</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃏</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #5533ff;
+            --primary-hover: #4422dd;
+            --primary-light: #e8e4ff;
+            --primary-bg: rgba(85, 51, 255, 0.08);
+            --accent: #ffc107;
+            --accent-hover: #e6ad00;
+            --bg-page: #ffffff;
+            --bg-surface: #f8f9fb;
+            --bg-card: #ffffff;
+            --bg-input: #f1f3f9;
+            --text-primary: #1a1a2e;
+            --text-secondary: #4e5b73;
+            --text-muted: #8892a4;
+            --border: #e5e7eb;
+            --border-strong: #d1d5db;
+            --success: #10b981;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-page);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+
+        .logo-mark {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .logo span { color: var(--accent); }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1.25rem;
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-accent {
+            background: var(--accent);
+            color: var(--text-primary);
+        }
+
+        .btn-accent:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-input);
+            border-color: var(--border-strong);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg-surface);
+        }
+
+        .btn-sm { padding: 0.5rem 1rem; font-size: 0.8rem; }
+        .btn-lg { padding: 0.875rem 2rem; font-size: 1rem; }
+
+        /* Screens */
+        .screen { display: none; position: relative; min-height: 100vh; }
+        .screen.active { display: block; }
+
+        /* ========== LANDING ========== */
+        .landing {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 6rem 2rem 2rem;
+            text-align: center;
+            background: linear-gradient(180deg, var(--bg-surface) 0%, var(--bg-page) 50%);
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--primary-light);
+            border-radius: 100px;
+            font-size: 0.8rem;
+            color: var(--primary);
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-title {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 700;
+            line-height: 1.15;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .hero-title .accent { color: var(--primary); }
+
+        .hero-subtitle {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            max-width: 480px;
+            margin-bottom: 2rem;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 4rem;
+        }
+
+        .features-row {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .feature-item svg {
+            width: 20px;
+            height: 20px;
+            color: var(--success);
+        }
+
+        /* ========== CREATE GAME ========== */
+        .create-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 5rem 1rem 2rem;
+            background: var(--bg-surface);
+        }
+
+        .form-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 480px;
+            overflow: hidden;
+        }
+
+        .form-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .form-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .form-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .form-body {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: all 0.15s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-bg);
+        }
+
+        .form-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234e5b73' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            padding-right: 2.5rem;
+        }
+
+        .toggle-list {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .toggle-row:last-child { border-bottom: none; }
+
+        .toggle-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .toggle {
+            width: 44px;
+            height: 24px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .toggle.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
+        }
+
+        .toggle.active::after {
+            transform: translateX(20px);
+        }
+
+        .form-footer {
+            padding: 1.5rem;
+            background: var(--bg-surface);
+            border-top: 1px solid var(--border);
+        }
+
+        /* ========== JOIN ========== */
+        .join-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+            background: var(--bg-surface);
+        }
+
+        .join-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            padding: 2rem;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .join-title {
+            font-size: 1.375rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .join-game-name {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .join-game-name strong { color: var(--primary); }
+
+        .avatar-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.75rem;
+            margin: 1.5rem 0;
+        }
+
+        .avatar-option {
+            width: 52px;
+            height: 52px;
+            background: var(--bg-surface);
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: all 0.15s ease;
+        }
+
+        .avatar-option:hover {
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+
+        .avatar-option.selected {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            transform: scale(1.05);
+        }
+
+        .spectator-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin: 1.5rem 0;
+            padding: 0.75rem;
+            background: var(--bg-surface);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* ========== GAME ROOM ========== */
+        .game-room {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .game-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .game-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .game-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .user-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.375rem 0.875rem 0.375rem 0.375rem;
+            background: var(--bg-surface);
+            border-radius: 100px;
+            font-size: 0.875rem;
+        }
+
+        .user-pill-avatar {
+            width: 28px;
+            height: 28px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+        }
+
+        /* Main game area */
+        .game-main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            min-height: 0;
+        }
+
+        /* Table area */
+        .table-area {
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+            background: var(--bg-surface);
+        }
+
+        .table-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .poker-table {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 2 / 1;
+            background: linear-gradient(135deg, #e8f4f8 0%, #dbeafe 100%);
+            border: 3px solid var(--primary);
+            border-radius: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-lg), inset 0 2px 20px rgba(85, 51, 255, 0.05);
+        }
+
+        .table-content {
+            text-align: center;
+        }
+
+        .table-status {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .reveal-btn {
+            padding: 0.875rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            background: var(--primary);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: all 0.15s ease;
+        }
+
+        .reveal-btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Player seats - positioned around the table */
+        .player-seat {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .player-card {
+            width: 44px;
+            height: 62px;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
+        }
+
+        .player-card.voted {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .player-card.waiting {
+            background: var(--bg-surface);
+            border-style: dashed;
+            color: var(--text-muted);
+        }
+
+        .player-card.mine {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(85, 51, 255, 0.3);
+        }
+
+        .player-name {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            background: var(--bg-card);
+            padding: 0.125rem 0.5rem;
+            border-radius: 100px;
+            border: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        /* Seat positions */
+        .seat-top { top: -70px; left: 50%; transform: translateX(-50%); }
+        .seat-top-left { top: -30px; left: 12%; }
+        .seat-top-right { top: -30px; right: 12%; }
+        .seat-left { top: 50%; left: -55px; transform: translateY(-50%); }
+        .seat-right { top: 50%; right: -55px; transform: translateY(-50%); }
+        .seat-bottom { bottom: -70px; left: 50%; transform: translateX(-50%); }
+        .seat-bottom-left { bottom: -30px; left: 12%; }
+        .seat-bottom-right { bottom: -30px; right: 12%; }
+
+        /* Card selector */
+        .card-selector-area {
+            padding: 1rem 1.5rem;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+        }
+
+        .card-selector-label {
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .card-selector {
+            display: flex;
+            justify-content: center;
+            gap: 0.375rem;
+            flex-wrap: wrap;
+        }
+
+        .selector-card {
+            width: 44px;
+            height: 60px;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .selector-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .selector-card.selected {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            transform: translateY(-6px);
+            box-shadow: 0 6px 16px rgba(85, 51, 255, 0.3);
+        }
+
+        /* Issues sidebar */
+        .issues-sidebar {
+            background: var(--bg-card);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .sidebar-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .issues-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.75rem;
+        }
+
+        .issue-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.875rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .issue-card:hover {
+            border-color: var(--border-strong);
+        }
+
+        .issue-card.active {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .issue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.375rem;
+        }
+
+        .issue-id {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--primary);
+            background: var(--primary-bg);
+            padding: 0.125rem 0.375rem;
+            border-radius: 4px;
+        }
+
+        .issue-menu {
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .issue-title {
+            font-size: 0.85rem;
+            line-height: 1.4;
+            margin-bottom: 0.5rem;
+        }
+
+        .issue-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .voting-badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--accent-hover);
+            background: rgba(255, 193, 7, 0.15);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .issue-score {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            background: var(--primary-bg);
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+        }
+
+        .add-issue-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: transparent;
+            border: 2px dashed var(--border);
+            border-radius: 10px;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .add-issue-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Confidence Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            padding: 2rem;
+            text-align: center;
+            max-width: 420px;
+            width: 90%;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        .fist-selector {
+            display: flex;
+            justify-content: center;
+            gap: 0.625rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .fist-option {
+            width: 56px;
+            height: 68px;
+            background: var(--bg-surface);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .fist-option:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .fist-option.selected {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .fist-number {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .fist-emoji { font-size: 1rem; }
+
+        .modal-buttons {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .modal-buttons .btn { flex: 1; }
+
+        /* Demo nav */
+        .demo-nav {
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 4px;
+            background: var(--bg-card);
+            padding: 4px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-md);
+            z-index: 1000;
+        }
+
+        .demo-nav button {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.15s ease;
+        }
+
+        .demo-nav button:hover { color: var(--text-secondary); }
+        .demo-nav button.active { background: var(--primary); color: white; }
+
+        @media (max-width: 800px) {
+            .game-main { grid-template-columns: 1fr; }
+            .issues-sidebar { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- ========== LANDING ========== -->
+    <div class="screen active" id="landing">
+        <nav>
+            <div class="logo">
+                <div class="logo-mark">🃏</div>
+                Appinium<span>Poker</span>
+            </div>
+            <button class="btn btn-ghost btn-sm">Sign in</button>
+        </nav>
+
+        <div class="landing">
+            <div class="hero-badge">✨ Built for Agile Teams</div>
+            <h1 class="hero-title">Plan sprints<br><span class="accent">together</span></h1>
+            <p class="hero-subtitle">Real-time planning poker for your team. Estimate stories, align quickly, and have fun doing it.</p>
+
+            <div class="hero-buttons">
+                <button class="btn btn-primary btn-lg" onclick="showScreen('create')">🎮 Start Game</button>
+                <button class="btn btn-secondary btn-lg">Learn more</button>
+            </div>
+
+            <div class="features-row">
+                <div class="feature-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    Real-time sync
+                </div>
+                <div class="feature-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    No sign-up required
+                </div>
+                <div class="feature-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    Team memes
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== CREATE ========== -->
+    <div class="screen" id="create">
+        <nav>
+            <div class="logo" onclick="showScreen('landing')" style="cursor: pointer;">
+                <div class="logo-mark">🃏</div>
+                Appinium<span>Poker</span>
+            </div>
+        </nav>
+
+        <div class="create-screen">
+            <div class="form-card">
+                <div class="form-header">
+                    <div class="form-title">Create Game</div>
+                    <div class="form-subtitle">Set up your estimation session</div>
+                </div>
+
+                <div class="form-body">
+                    <div class="form-group">
+                        <label class="form-label">Game Name</label>
+                        <input type="text" class="form-input" value="Sprint 42 Planning">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Voting System</label>
+                        <select class="form-input form-select">
+                            <option>Fibonacci (0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, ?, ☕)</option>
+                            <option>T-Shirt (XS, S, M, L, XL)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Who can reveal cards</label>
+                        <select class="form-input form-select">
+                            <option>All players</option>
+                            <option>Moderator only</option>
+                        </select>
+                    </div>
+
+                    <label class="form-label">Settings</label>
+                    <div class="toggle-list">
+                        <div class="toggle-row">
+                            <span class="toggle-label">Auto-reveal cards</span>
+                            <div class="toggle" onclick="this.classList.toggle('active')"></div>
+                        </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label">Fun features (memes)</span>
+                            <div class="toggle active" onclick="this.classList.toggle('active')"></div>
+                        </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label">Show average</span>
+                            <div class="toggle active" onclick="this.classList.toggle('active')"></div>
+                        </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label">Countdown animation</span>
+                            <div class="toggle active" onclick="this.classList.toggle('active')"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-footer">
+                    <button class="btn btn-primary" style="width: 100%;" onclick="showScreen('join')">Create Game</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== JOIN ========== -->
+    <div class="screen" id="join">
+        <nav>
+            <div class="logo">
+                <div class="logo-mark">🃏</div>
+                Appinium<span>Poker</span>
+            </div>
+        </nav>
+
+        <div class="join-screen">
+            <div class="join-card">
+                <h2 class="join-title">Join Game</h2>
+                <p class="join-game-name">Joining <strong>Sprint 42 Planning</strong></p>
+
+                <label class="form-label" style="text-align: left;">Your name</label>
+                <input type="text" class="form-input" value="Alex">
+
+                <label class="form-label" style="text-align: left; margin-top: 1rem;">Pick avatar</label>
+                <div class="avatar-grid">
+                    <div class="avatar-option selected">😎</div>
+                    <div class="avatar-option">🦊</div>
+                    <div class="avatar-option">🐱</div>
+                    <div class="avatar-option">🦁</div>
+                    <div class="avatar-option">🐼</div>
+                    <div class="avatar-option">🦄</div>
+                    <div class="avatar-option">🐸</div>
+                    <div class="avatar-option">🤖</div>
+                </div>
+
+                <div class="spectator-row">
+                    <div class="toggle" onclick="this.classList.toggle('active')"></div>
+                    <span>Join as spectator</span>
+                </div>
+
+                <button class="btn btn-accent" style="width: 100%;" onclick="showScreen('game')">Continue to Game</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== GAME ROOM ========== -->
+    <div class="screen" id="game">
+        <div class="game-room">
+            <header class="game-header">
+                <div class="game-info">
+                    <div class="logo-mark" style="width: 28px; height: 28px; font-size: 0.9rem;">🃏</div>
+                    <span class="game-title">Sprint 42 Planning</span>
+                </div>
+                <div class="game-controls">
+                    <button class="btn btn-ghost btn-sm" onclick="showConfidence()">✊ Confidence</button>
+                    <button class="btn btn-secondary btn-sm">👥 Invite</button>
+                    <div class="user-pill">
+                        <div class="user-pill-avatar">😎</div>
+                        Alex
+                    </div>
+                </div>
+            </header>
+
+            <div class="game-main">
+                <div class="table-area">
+                    <div class="table-container">
+                        <div class="poker-table">
+                            <!-- Player seats -->
+                            <div class="player-seat seat-top">
+                                <div class="player-card voted"></div>
+                                <span class="player-name">🦊 Maria</span>
+                            </div>
+                            <div class="player-seat seat-top-left">
+                                <div class="player-card voted"></div>
+                                <span class="player-name">🐱 John</span>
+                            </div>
+                            <div class="player-seat seat-top-right">
+                                <div class="player-card waiting">?</div>
+                                <span class="player-name">🦁 Kate</span>
+                            </div>
+                            <div class="player-seat seat-left">
+                                <div class="player-card voted"></div>
+                                <span class="player-name">🐼 Mike</span>
+                            </div>
+                            <div class="player-seat seat-right">
+                                <div class="player-card voted"></div>
+                                <span class="player-name">🦄 Sarah</span>
+                            </div>
+                            <div class="player-seat seat-bottom">
+                                <div class="player-card mine">8</div>
+                                <span class="player-name">😎 You</span>
+                            </div>
+
+                            <div class="table-content">
+                                <p class="table-status">Waiting for Kate...</p>
+                                <button class="reveal-btn">Reveal Cards</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-selector-area">
+                        <div class="card-selector-label">Choose your card 👇</div>
+                        <div class="card-selector">
+                            <div class="selector-card">0</div>
+                            <div class="selector-card">1</div>
+                            <div class="selector-card">2</div>
+                            <div class="selector-card">3</div>
+                            <div class="selector-card">5</div>
+                            <div class="selector-card selected">8</div>
+                            <div class="selector-card">13</div>
+                            <div class="selector-card">21</div>
+                            <div class="selector-card">34</div>
+                            <div class="selector-card">55</div>
+                            <div class="selector-card">89</div>
+                            <div class="selector-card">?</div>
+                            <div class="selector-card">☕</div>
+                        </div>
+                    </div>
+                </div>
+
+                <aside class="issues-sidebar">
+                    <div class="sidebar-header">
+                        <span class="sidebar-title">Issues</span>
+                        <span class="sidebar-meta">3 · 26 pts</span>
+                    </div>
+
+                    <div class="issues-list">
+                        <div class="issue-card">
+                            <div class="issue-header">
+                                <span class="issue-id">PP-1</span>
+                                <span class="issue-menu">⋯</span>
+                            </div>
+                            <div class="issue-title">Implement user authentication flow</div>
+                            <div class="issue-footer">
+                                <span></span>
+                                <span class="issue-score">13</span>
+                            </div>
+                        </div>
+
+                        <div class="issue-card active">
+                            <div class="issue-header">
+                                <span class="issue-id">PP-2</span>
+                                <span class="issue-menu">⋯</span>
+                            </div>
+                            <div class="issue-title">Add real-time notifications</div>
+                            <div class="issue-footer">
+                                <span class="voting-badge">Voting now</span>
+                                <span></span>
+                            </div>
+                        </div>
+
+                        <div class="issue-card">
+                            <div class="issue-header">
+                                <span class="issue-id">PP-3</span>
+                                <span class="issue-menu">⋯</span>
+                            </div>
+                            <div class="issue-title">Create dashboard analytics</div>
+                            <div class="issue-footer">
+                                <span></span>
+                                <span class="issue-score">13</span>
+                            </div>
+                        </div>
+
+                        <button class="add-issue-btn">+ Add issue</button>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confidence Modal -->
+    <div class="modal-overlay" id="confidence">
+        <div class="modal-card">
+            <h2 class="modal-title">✊ Confidence Vote</h2>
+            <p class="modal-subtitle">How confident are you in this sprint?</p>
+
+            <div class="fist-selector">
+                <div class="fist-option"><span class="fist-number">1</span><span class="fist-emoji">😰</span></div>
+                <div class="fist-option"><span class="fist-number">2</span><span class="fist-emoji">😕</span></div>
+                <div class="fist-option selected"><span class="fist-number">3</span><span class="fist-emoji">😐</span></div>
+                <div class="fist-option"><span class="fist-number">4</span><span class="fist-emoji">😊</span></div>
+                <div class="fist-option"><span class="fist-number">5</span><span class="fist-emoji">🤩</span></div>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="hideConfidence()">Cancel</button>
+                <button class="btn btn-accent" onclick="hideConfidence()">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Demo Nav -->
+    <div class="demo-nav">
+        <button class="active" onclick="showScreen('landing')">Landing</button>
+        <button onclick="showScreen('create')">Create</button>
+        <button onclick="showScreen('join')">Join</button>
+        <button onclick="showScreen('game')">Game</button>
+    </div>
+
+    <script>
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.demo-nav button').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function showConfidence() { document.getElementById('confidence').classList.add('active'); }
+        function hideConfidence() { document.getElementById('confidence').classList.remove('active'); }
+
+        document.querySelectorAll('.selector-card').forEach(card => {
+            card.addEventListener('click', function() {
+                document.querySelectorAll('.selector-card').forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+
+        document.querySelectorAll('.avatar-option').forEach(a => {
+            a.addEventListener('click', function() {
+                document.querySelectorAll('.avatar-option').forEach(x => x.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+
+        document.querySelectorAll('.fist-option').forEach(f => {
+            f.addEventListener('click', function() {
+                document.querySelectorAll('.fist-option').forEach(x => x.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+    </script>
+</body>
+</html>
