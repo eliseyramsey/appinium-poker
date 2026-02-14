@@ -73,8 +73,6 @@
 - [x] Build game creation form:
   - [x] Game name input with emoji picker (optional)
   - [x] Voting system selector (Fibonacci default)
-  - [x] Who can reveal dropdown
-  - [x] Who can manage issues dropdown
   - [x] Auto-reveal toggle
   - [x] Fun features toggle
   - [x] Show average toggle
@@ -82,6 +80,7 @@
 - [x] Form validation
 - [x] Submit → create game in DB → redirect to join page
 - [x] Generate unique game ID (nanoid)
+- [x] Removed Permissions section (admin = first player automatically)
 
 ---
 
@@ -182,9 +181,10 @@
 
 **Voting Flow:**
 - [x] Click button → modal appears for ALL players simultaneously
-- [x] FistSelector with hand emojis (✊👆✌️🤟🖐️ = 1-5)
+- [x] FistSelector with hand emojis (☝️✌️🤟🖖🖐️ = 1-5)
 - [x] Votes hidden until everyone voted (like card voting)
 - [x] On reveal: show hand emoji next to each avatar (instead of cards)
+- [x] Can change vote before reveal
 
 **API:**
 - [x] POST `/api/confidence` — submit confidence vote
@@ -215,6 +215,8 @@
 - [x] Reveal cards
 - [x] Start new voting round
 - [x] Set current issue for voting
+- [x] Add issues
+- [x] Edit issues
 - [x] Delete issues
 - [x] Trigger Confidence Vote
 - [x] Reset Confidence Vote
