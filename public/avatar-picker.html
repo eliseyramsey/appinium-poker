@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avatar Picker</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #1a1a2e;
+      color: white;
+      padding: 20px;
+    }
+    h1 { margin-bottom: 20px; }
+    .instructions {
+      background: #2a2a4e;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: #2a2a4e;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .image-box {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1;
+      background-color: #111;
+      background-repeat: no-repeat;
+    }
+    .preview-circle {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 3px solid #5533ff;
+      background-color: #111;
+      background-repeat: no-repeat;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+    .controls {
+      padding: 12px;
+    }
+    .filename {
+      font-weight: bold;
+      color: #5533ff;
+      margin-bottom: 10px;
+      word-break: break-all;
+      font-size: 11px;
+    }
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .slider-row label {
+      font-size: 13px;
+      color: #ccc;
+      min-width: 50px;
+    }
+    .slider-row input[type="range"] {
+      flex: 1;
+      height: 8px;
+      -webkit-appearance: none;
+      background: #444;
+      border-radius: 4px;
+      outline: none;
+    }
+    .slider-row input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      background: #5533ff;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .slider-value {
+      font-family: monospace;
+      font-size: 13px;
+      min-width: 55px;
+      text-align: right;
+      color: #aaa;
+    }
+    .reset-btn {
+      background: #555;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+      margin-left: 5px;
+    }
+    .reset-btn:hover { background: #777; }
+    #output {
+      margin-top: 30px;
+      background: #2a2a4e;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    #output h2 { margin-bottom: 15px; }
+    #output pre {
+      background: #1a1a2e;
+      padding: 15px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 11px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .copy-btn {
+      background: #5533ff;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    .copy-btn:hover { background: #4422dd; }
+  </style>
+</head>
+<body>
+  <h1>🎯 Avatar Picker</h1>
+
+  <div class="instructions">
+    <strong>Как пользоваться:</strong><br>
+    • <strong>Zoom</strong> — увеличивает фото (100% = оригинал, 300% = 3x приближение)<br>
+    • <strong>X</strong> — сдвигает по горизонтали (0% = левый край, 100% = правый край)<br>
+    • <strong>Y</strong> — сдвигает по вертикали (0% = верх, 100% = низ)<br>
+    • Смотри на круглое превью справа внизу — так будет выглядеть аватарка
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div id="output">
+    <h2>📋 Готовый код</h2>
+    <pre id="code"></pre>
+    <button class="copy-btn" onclick="copyCode()">📋 Скопировать</button>
+  </div>
+
+  <script>
+    const avatars = [
+      "IMG_2292.PNG",
+      "IMG_2816.jpg",
+      "IMG_2872.jpg",
+      "IMG_5777.JPG",
+      "IMG_5982.jpg",
+      "IMG_6838.jpg",
+      "IMG_6846.jpg",
+      "IMG_8637.jpg",
+      "IMG_8952.jpg",
+      "IMG_9369.jpg",
+      "IMG_9372.jpg",
+      "IMG_9443.jpg",
+      "IMG_9444.jpg",
+      "IMG_9445.JPG",
+      "IMG_9503.jpg",
+      "IMG_9524.jpg",
+      "IMG_9661.JPG",
+      "IMG_9690.jpg",
+      "IMG_9737.JPG",
+      "IMG_9738.JPG",
+      "elisey_old.jpg",
+      "R0000830.jpeg",
+      "Screenshot Olya Neronova (@chipmunk_happy) • Instagram photos and videos 🔊 2024-07-16 09-37-17.png",
+      "Subject.png",
+      "screenshot_meet_-_hwi-fbsh-gao______2024-05-30_10-08-53.png",
+      "screenshot_meet_-_hwi-fbsh-gao______2024-06-07_10-14-03.png"
+    ];
+
+    // State: zoom in %, x/y position in %
+    const state = {};
+    avatars.forEach(a => state[a] = { zoom: 100, x: 50, y: 50 });
+
+    function render() {
+      const grid = document.getElementById('grid');
+      grid.innerHTML = avatars.map((avatar, idx) => {
+        const s = state[avatar];
+        const url = `/avatars/${encodeURIComponent(avatar)}`;
+        return `
+        <div class="card">
+          <div class="image-box" id="box-${idx}" style="
+            background-image: url('${url}');
+            background-size: ${s.zoom}%;
+            background-position: ${s.x}% ${s.y}%;
+          ">
+            <div class="preview-circle" id="preview-${idx}" style="
+              background-image: url('${url}');
+              background-size: ${s.zoom * 80 / 100}px;
+              background-position: ${s.x}% ${s.y}%;
+            "></div>
+          </div>
+          <div class="controls">
+            <div class="filename">${avatar}</div>
+
+            <div class="slider-row">
+              <label>Zoom:</label>
+              <input type="range" min="100" max="400" step="10" value="${s.zoom}"
+                oninput="setVal(${idx}, 'zoom', this.value)">
+              <span class="slider-value" id="zoom-${idx}">${s.zoom}%</span>
+            </div>
+
+            <div class="slider-row">
+              <label>X:</label>
+              <input type="range" min="0" max="100" value="${s.x}"
+                oninput="setVal(${idx}, 'x', this.value)">
+              <span class="slider-value" id="x-${idx}">${s.x}%</span>
+            </div>
+
+            <div class="slider-row">
+              <label>Y:</label>
+              <input type="range" min="0" max="100" value="${s.y}"
+                oninput="setVal(${idx}, 'y', this.value)">
+              <span class="slider-value" id="y-${idx}">${s.y}%</span>
+              <button class="reset-btn" onclick="resetCard(${idx})">Reset</button>
+            </div>
+          </div>
+        </div>
+      `}).join('');
+      updateCode();
+    }
+
+    function setVal(idx, key, val) {
+      state[avatars[idx]][key] = parseInt(val);
+      updateCard(idx);
+      updateCode();
+    }
+
+    function resetCard(idx) {
+      state[avatars[idx]] = { zoom: 100, x: 50, y: 50 };
+      render();
+    }
+
+    function updateCard(idx) {
+      const s = state[avatars[idx]];
+      const box = document.getElementById(`box-${idx}`);
+      const preview = document.getElementById(`preview-${idx}`);
+
+      box.style.backgroundSize = `${s.zoom}%`;
+      box.style.backgroundPosition = `${s.x}% ${s.y}%`;
+
+      // Preview circle is 80px, scale zoom proportionally
+      preview.style.backgroundSize = `${s.zoom * 80 / 100}px`;
+      preview.style.backgroundPosition = `${s.x}% ${s.y}%`;
+
+      document.getElementById(`zoom-${idx}`).textContent = `${s.zoom}%`;
+      document.getElementById(`x-${idx}`).textContent = `${s.x}%`;
+      document.getElementById(`y-${idx}`).textContent = `${s.y}%`;
+    }
+
+    function updateCode() {
+      const lines = avatars.map(a => {
+        const s = state[a];
+        return `  { src: "/avatars/${a}", zoom: ${s.zoom}, x: ${s.x}, y: ${s.y} },`;
+      });
+      document.getElementById('code').textContent =
+        `export const TEAM_AVATARS = [\n${lines.join('\n')}\n] as const;`;
+    }
+
+    function copyCode() {
+      navigator.clipboard.writeText(document.getElementById('code').textContent);
+      alert('✅ Скопировано!');
+    }
+
+    render();
+  </script>
+</body>
+</html>
