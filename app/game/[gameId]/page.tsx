@@ -5,12 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import { Copy, Check, PanelRightOpen, PanelRightClose } from "lucide-react";
 import { IssuesSidebar } from "@/components/issues/IssuesSidebar";
 import { Button } from "@/components/ui/Button";
+import { Avatar } from "@/components/ui/Avatar";
 import { VOTING_CARDS } from "@/lib/constants";
 import { usePlayerStore } from "@/lib/store/playerStore";
 import { useGameStore } from "@/lib/store/gameStore";
 import { useGameRealtime } from "@/lib/hooks/useGameRealtime";
 import { calculateAverage } from "@/lib/utils/calculations";
-import Image from "next/image";
 
 export default function GameRoomPage() {
   const params = useParams();
@@ -303,15 +303,7 @@ export default function GameRoomPage() {
 
               {/* User pill */}
               <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--bg-surface)] rounded-full">
-                <div className="w-7 h-7 rounded-full overflow-hidden">
-                  <Image
-                    src={currentPlayer.avatar || "https://randomuser.me/api/portraits/men/32.jpg"}
-                    alt="Avatar"
-                    width={28}
-                    height={28}
-                    className="object-cover"
-                  />
-                </div>
+                <Avatar src={currentPlayer.avatar} size={28} />
                 <span className="text-sm font-medium text-[var(--text-primary)]">
                   {currentPlayer.name}
                 </span>
@@ -388,7 +380,7 @@ export default function GameRoomPage() {
           </div>
 
           {/* Players around table */}
-          <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex gap-8">
+          <div className="absolute -top-28 left-1/2 -translate-x-1/2 flex gap-8">
             {players.slice(0, Math.ceil(players.length / 2)).map((player) => (
               <PlayerSeat
                 key={player.id}
@@ -399,11 +391,12 @@ export default function GameRoomPage() {
                 confidenceVote={getPlayerConfidenceVote(player.id)}
                 showConfidence={isConfidenceRevealed}
                 isCreator={game?.creator_id === player.id}
+                position="top"
               />
             ))}
           </div>
 
-          <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 flex gap-8">
+          <div className="absolute -bottom-28 left-1/2 -translate-x-1/2 flex gap-8">
             {players.slice(Math.ceil(players.length / 2)).map((player) => (
               <PlayerSeat
                 key={player.id}
@@ -414,6 +407,7 @@ export default function GameRoomPage() {
                 confidenceVote={getPlayerConfidenceVote(player.id)}
                 showConfidence={isConfidenceRevealed}
                 isCreator={game?.creator_id === player.id}
+                position="bottom"
               />
             ))}
           </div>
@@ -498,6 +492,7 @@ function PlayerSeat({
   confidenceVote,
   showConfidence,
   isCreator,
+  position,
 }: {
   player: { id: string; name: string; avatar: string | null };
   vote: string | null;
@@ -506,58 +501,57 @@ function PlayerSeat({
   confidenceVote?: number | null;
   showConfidence?: boolean;
   isCreator?: boolean;
+  position: "top" | "bottom";
 }) {
   const hasVoted = vote !== null;
   const hasConfidenceVote = confidenceVote !== null && confidenceVote !== undefined;
 
+  const card = (
+    <div
+      className={`
+        w-14 h-20 rounded-lg flex items-center justify-center font-mono font-bold text-lg
+        transition-all duration-300 shadow-md
+        ${showConfidence
+          ? hasConfidenceVote
+            ? "bg-[var(--accent)]/20 text-2xl"
+            : "bg-[var(--border)] text-transparent"
+          : hasVoted
+            ? "bg-[var(--primary)] text-white"
+            : "bg-[var(--border)] text-transparent"
+        }
+        ${isCurrentPlayer ? "ring-2 ring-[var(--accent)]" : ""}
+      `}
+    >
+      {showConfidence
+        ? hasConfidenceVote
+          ? CONFIDENCE_EMOJIS[confidenceVote!]
+          : "?"
+        : isRevealed && hasVoted
+          ? vote
+          : hasVoted
+            ? "✓"
+            : "?"
+      }
+    </div>
+  );
+
+  const avatar = (
+    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm ${isCurrentPlayer ? "bg-[var(--primary-light)]" : "bg-white"}`}>
+      {isCreator && (
+        <span className="text-sm" title="Game Admin">👑</span>
+      )}
+      <Avatar src={player.avatar} size={40} />
+      <span className="text-sm font-medium text-[var(--text-primary)]">
+        {player.name}
+      </span>
+    </div>
+  );
+
+  // Top: avatar above card, Bottom: card above avatar
   return (
     <div className="flex flex-col items-center gap-2">
-      {/* Card or Confidence Emoji */}
-      <div
-        className={`
-          w-12 h-16 rounded-lg flex items-center justify-center font-mono font-bold
-          transition-all duration-300
-          ${showConfidence
-            ? hasConfidenceVote
-              ? "bg-[var(--accent)]/20 text-2xl"
-              : "bg-[var(--border)] text-transparent"
-            : hasVoted
-              ? "bg-[var(--primary)] text-white"
-              : "bg-[var(--border)] text-transparent"
-          }
-          ${isCurrentPlayer ? "ring-2 ring-[var(--accent)]" : ""}
-        `}
-      >
-        {showConfidence
-          ? hasConfidenceVote
-            ? CONFIDENCE_EMOJIS[confidenceVote!]
-            : "?"
-          : isRevealed && hasVoted
-            ? vote
-            : hasVoted
-              ? "✓"
-              : "?"
-        }
-      </div>
-
-      {/* Avatar + Name */}
-      <div className={`flex items-center gap-2 px-2 py-1 rounded-full shadow-sm ${isCurrentPlayer ? "bg-[var(--primary-light)]" : "bg-white"}`}>
-        {isCreator && (
-          <span className="text-xs" title="Game Admin">👑</span>
-        )}
-        <div className="w-6 h-6 rounded-full overflow-hidden">
-          <Image
-            src={player.avatar || "https://randomuser.me/api/portraits/men/32.jpg"}
-            alt={player.name}
-            width={24}
-            height={24}
-            className="object-cover"
-          />
-        </div>
-        <span className="text-xs font-medium text-[var(--text-primary)]">
-          {player.name}
-        </span>
-      </div>
+      {position === "top" ? avatar : card}
+      {position === "top" ? card : avatar}
     </div>
   );
 }

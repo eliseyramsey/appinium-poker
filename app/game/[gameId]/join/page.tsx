@@ -1,15 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Toggle } from "@/components/ui/Toggle";
-import { AVATAR_OPTIONS } from "@/lib/constants";
+import { TEAM_AVATARS, TeamAvatar } from "@/lib/constants";
 import { usePlayerStore } from "@/lib/store/playerStore";
+
+interface Player {
+  id: string;
+  avatar: string | null;
+}
 
 export default function JoinGamePage() {
   const router = useRouter();
@@ -20,11 +24,44 @@ export default function JoinGamePage() {
   const gameName = searchParams.get("name") || "Planning Session";
 
   const [playerName, setPlayerName] = useState("");
-  const [selectedAvatar, setSelectedAvatar] = useState<string>(AVATAR_OPTIONS[0]);
   const [isSpectator, setIsSpectator] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [existingPlayers, setExistingPlayers] = useState<Player[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const setCurrentPlayer = usePlayerStore((state) => state.setCurrentPlayer);
+
+  // Fetch existing players to filter taken avatars
+  const fetchPlayers = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/games/${gameId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setExistingPlayers(data.players || []);
+      }
+    } catch {
+      // Game might not exist yet, ignore
+    }
+  }, [gameId]);
+
+  useEffect(() => {
+    fetchPlayers();
+  }, [fetchPlayers]);
+
+  // Filter out taken avatars
+  const availableAvatars = useMemo(() => {
+    const takenAvatars = new Set(existingPlayers.map((p) => p.avatar));
+    return TEAM_AVATARS.filter((a) => !takenAvatars.has(a.src));
+  }, [existingPlayers]);
+
+  const [selectedAvatar, setSelectedAvatar] = useState<TeamAvatar | null>(null);
+
+  // Select first available avatar when list loads
+  useEffect(() => {
+    if (!selectedAvatar && availableAvatars.length > 0) {
+      setSelectedAvatar(availableAvatars[0]);
+    }
+  }, [availableAvatars, selectedAvatar]);
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,14 +77,25 @@ export default function JoinGamePage() {
         body: JSON.stringify({
           gameId,
           name: playerName.trim(),
-          avatar: selectedAvatar,
+          avatar: selectedAvatar?.src,
           isSpectator,
         }),
       });
 
       if (!response.ok) {
+        const errorData = await response.json();
+        // Avatar was taken by someone else - refresh list and show error
+        if (errorData.code === "AVATAR_TAKEN") {
+          await fetchPlayers();
+          setSelectedAvatar(null); // Will auto-select first available
+          setError("This avatar was just taken! Please choose another one.");
+          setIsLoading(false);
+          return;
+        }
         throw new Error("Failed to join game");
       }
+
+      setError(null);
 
       const player = await response.json();
 
@@ -125,31 +173,31 @@ export default function JoinGamePage() {
             {/* Avatar Selection */}
             <div>
               <label className="block text-sm font-medium text-[var(--text-primary)] mb-3">
-                Choose Avatar
+                Choose Avatar ({availableAvatars.length} available)
               </label>
               <div className="grid grid-cols-4 gap-3">
-                {AVATAR_OPTIONS.map((avatar, index) => (
+                {availableAvatars.map((avatar, index) => (
                   <button
-                    key={index}
+                    key={avatar.src}
                     type="button"
-                    onClick={() => setSelectedAvatar(avatar)}
+                    onClick={() => { setSelectedAvatar(avatar); setError(null); }}
                     className={`
-                      relative w-full aspect-square rounded-xl overflow-hidden
+                      w-full aspect-square rounded-xl overflow-hidden
                       border-2 transition-all duration-200
                       ${
-                        selectedAvatar === avatar
+                        selectedAvatar?.src === avatar.src
                           ? "border-[var(--primary)] ring-2 ring-[var(--primary)] ring-offset-2"
                           : "border-[var(--border)] hover:border-[var(--border-hover)]"
                       }
                     `}
-                  >
-                    <Image
-                      src={avatar}
-                      alt={`Avatar ${index + 1}`}
-                      fill
-                      className="object-cover"
-                    />
-                  </button>
+                    style={{
+                      backgroundImage: `url(${avatar.src})`,
+                      backgroundSize: `${avatar.zoom}%`,
+                      backgroundPosition: `${avatar.x}% ${avatar.y}%`,
+                      backgroundRepeat: "no-repeat",
+                    }}
+                    aria-label={`Avatar ${index + 1}`}
+                  />
                 ))}
               </div>
             </div>
@@ -162,12 +210,19 @@ export default function JoinGamePage() {
               onChange={(e) => setIsSpectator(e.target.checked)}
             />
 
+            {/* Error message */}
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                {error}
+              </div>
+            )}
+
             {/* Submit */}
             <Button
               type="submit"
               size="lg"
               isLoading={isLoading}
-              disabled={!playerName.trim()}
+              disabled={!playerName.trim() || !selectedAvatar}
               className="w-full"
             >
               Continue to Game

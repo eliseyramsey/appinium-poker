@@ -50,6 +50,22 @@ export async function POST(request: NextRequest) {
 
     const gameData = game as { id: string; creator_id: string | null };
 
+    // Check if avatar is already taken
+    if (body.avatar) {
+      const { data: existingPlayers } = await supabase
+        .from("players")
+        .select("id")
+        .eq("game_id", body.gameId)
+        .eq("avatar", body.avatar);
+
+      if (existingPlayers && existingPlayers.length > 0) {
+        return NextResponse.json(
+          { error: "Avatar already taken", code: "AVATAR_TAKEN" },
+          { status: 409 }
+        );
+      }
+    }
+
     // Create player
     const playerData: PlayerInsert = {
       id: playerId,
