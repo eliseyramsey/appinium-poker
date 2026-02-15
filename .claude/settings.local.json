@@ -10,7 +10,17 @@
       "Bash(npm run dev:*)",
       "Bash(pkill:*)",
       "Bash(lsof:*)",
-      "Bash(kill:*)"
+      "Bash(kill:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(gh repo create:*)",
+      "Bash(git push:*)",
+      "Bash(pgrep:*)",
+      "Bash(npx tsc:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_click",
+      "Bash(git checkout:*)",
+      "Bash(gh pr:*)"
     ]
   }
 }
