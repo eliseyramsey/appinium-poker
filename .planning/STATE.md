@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Команда может быстро и весело оценить задачи в Story Points
-**Current focus:** Phase 4 — Bug Fixes (COMPLETE)
+**Current focus:** Phase 5 — Quick Wins + Tests
 
 ## Progress
 
@@ -15,10 +15,20 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 | 2. Meme System | ✓ Complete | 100% |
 | 3. Deploy | ✓ Complete | 100% |
 | 4. Bug Fixes | ✓ Complete | 100% |
+| 5. Quick Wins + Tests | In Progress | 50% |
 
-**Overall:** 4/4 phases complete
+**Overall:** 4/5 phases complete
 
 ## Current Phase
+
+**Phase 5: Quick Wins + Tests** — IN PROGRESS (Plan 2/4 complete)
+- Plan 01: UX Quick Wins I (COMPLETE)
+  - QW-01: Game Not Found page - DONE
+  - QW-05: Empty state improvement - DONE
+- Plan 02: UX Quick Wins II (loading states)
+- Plan 03: Testing Setup (COMPLETE)
+  - TEST-01: Vitest setup - DONE
+- Plan 04: Unit Tests
 
 **Phase 4: Bug Fixes** — COMPLETE
 - Plan 01: Security fixes (COMPLETE)
@@ -59,6 +69,10 @@ None - all planned work complete.
 
 ## Accumulated Context
 
+### Roadmap Evolution
+
+- Phase 5 added: Quick Wins + Tests (from Product Review 2026-02-17)
+
 ### All Todos Complete
 
 **Critical (0 remaining):**
@@ -88,6 +102,13 @@ None - all planned work complete.
 - ToastProvider wraps inner component to enable useToast hook usage
 - Error toasts shown on both catch blocks AND non-OK HTTP responses
 - Removed Database generic from Supabase client - type safety at app level via Insert/Update interfaces
+
+## Decisions Made (Phase 5)
+
+- Client-side 404 via inline component instead of Next.js notFound() - game state is client-managed via realtime hooks
+- Added isGameLoaded flag to Zustand store for detecting initial data load completion
+- jsdom v24 instead of v28 for ESM compatibility with Vitest
+- Added type: module to package.json for Vitest/Vite ESM module resolution
 
 ## Quick Tasks Completed
 
@@ -126,5 +147,19 @@ None - all planned work complete.
   - Removed all `as never` casts from API routes (12 occurrences)
   - Duration: 7 minutes
 
+### 2026-02-17: Product Review & Phase 5
+- Ran Product Advisor skill — full product review
+- Created PRODUCT_REVIEW.md with prioritized recommendations
+- Added Phase 5: Quick Wins + Tests to roadmap
+- Requirements: QW-01 to QW-05 (UX), TEST-01 to TEST-03 (testing)
+
+### 2026-02-17: Phase 5 Plan 03 Complete
+- Plan 03: Testing Setup (TEST-01)
+  - Installed Vitest, React Testing Library, jest-dom
+  - Configured vitest.config.ts with jsdom environment
+  - Added test scripts: npm run test, test:run, test:coverage
+  - Fixed ESM compatibility with jsdom v24
+  - Duration: 3 minutes
+
 ---
-*Last updated: 2026-02-17 - Phase 4 complete, all bugs fixed*
+*Last updated: 2026-02-17 - Plan 03 complete*
