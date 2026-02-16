@@ -27,43 +27,49 @@ export interface Meme {
  * Find memes: Google Images, imgflip.com, or save from social media
  */
 
+// All memes from public/memes/ folder (21 images, skipping 13.mp4)
+const ALL_MEMES: Meme[] = [
+  { src: "/memes/01.jpg", alt: "Meme 1" },
+  { src: "/memes/02.jpg", alt: "Meme 2" },
+  { src: "/memes/03.png", alt: "Meme 3" },
+  { src: "/memes/04.jpg", alt: "Meme 4" },
+  { src: "/memes/05.jpg", alt: "Meme 5" },
+  { src: "/memes/06.jpg", alt: "Meme 6" },
+  { src: "/memes/07.jpg", alt: "Meme 7" },
+  { src: "/memes/08.jpg", alt: "Meme 8" },
+  { src: "/memes/09.jpg", alt: "Meme 9" },
+  { src: "/memes/10.jpg", alt: "Meme 10" },
+  { src: "/memes/11.jpg", alt: "Meme 11" },
+  { src: "/memes/12.jpg", alt: "Meme 12" },
+  // 13.mp4 skipped (video not supported)
+  { src: "/memes/14.jpg", alt: "Meme 14" },
+  { src: "/memes/15.jpg", alt: "Meme 15" },
+  { src: "/memes/16.jpg", alt: "Meme 16" },
+  { src: "/memes/17.jpg", alt: "Meme 17" },
+  { src: "/memes/18.jpg", alt: "Meme 18" },
+  { src: "/memes/19.jpg", alt: "Meme 19" },
+  { src: "/memes/20.jpg", alt: "Meme 20" },
+  { src: "/memes/21.png", alt: "Meme 21" },
+  { src: "/memes/22.jpg", alt: "Meme 22" },
+];
+
 // Memes organized by category
-// Add your images to public/memes/[category]/ and register them here
+// All categories share the same meme pool — random selection from 21 images
 export const MEMES: Record<MemeCategory, Meme[]> = {
   // All voted the same — consensus achieved!
-  consensus: [
-    { src: "/memes/consensus/01.jpg", alt: "Consensus!", caption: "🎉 Единогласно!" },
-    { src: "/memes/consensus/02.jpg", alt: "Agreement", caption: "✓ Договорились!" },
-    { src: "/memes/consensus/03.jpg", alt: "Same vote", caption: "🤝 Одна команда!" },
-  ],
+  consensus: ALL_MEMES,
 
   // Vote spread > 5 points — total chaos!
-  chaos: [
-    { src: "/memes/chaos/01.jpg", alt: "Chaos!", caption: "🔥 Это фиаско, братан" },
-    { src: "/memes/chaos/02.jpg", alt: "Disaster", caption: "💥 Хаос!" },
-    { src: "/memes/chaos/03.jpg", alt: "Panic", caption: "😱 Паника!" },
-  ],
+  chaos: ALL_MEMES,
 
   // Someone voted "?" — need clarification
-  confused: [
-    { src: "/memes/confused/01.jpg", alt: "Confused", caption: "❓ Что вообще происходит?" },
-    { src: "/memes/confused/02.jpg", alt: "Thinking", caption: "🤔 Надо подумать..." },
-    { src: "/memes/confused/03.jpg", alt: "Question", caption: "❓ Непонятно" },
-  ],
+  confused: ALL_MEMES,
 
   // Someone voted "☕" — time for a break!
-  break: [
-    { src: "/memes/break/01.jpg", alt: "Break time", caption: "☕ Пора на перерыв!" },
-    { src: "/memes/break/02.jpg", alt: "Coffee", caption: "☕ Кофе-брейк!" },
-    { src: "/memes/break/03.jpg", alt: "Rest", caption: "😴 Устали" },
-  ],
+  break: ALL_MEMES,
 
   // Default fallback
-  random: [
-    { src: "/memes/random/01.jpg", alt: "Random meme", caption: "🎲 Случайный мем" },
-    { src: "/memes/random/02.jpg", alt: "Fun", caption: "😄 Веселье" },
-    { src: "/memes/random/03.jpg", alt: "Meme", caption: "🎭 Мем" },
-  ],
+  random: ALL_MEMES,
 };
 
 // Fibonacci values for spread calculation
