@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Copy, Check, PanelRightOpen, PanelRightClose } from "lucide-react";
+import { Copy, Check, PanelRightOpen, PanelRightClose, LogOut, User, ImageIcon, ChevronDown } from "lucide-react";
 import { IssuesSidebar } from "@/components/issues/IssuesSidebar";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import { Avatar } from "@/components/ui/Avatar";
-import { VOTING_CARDS } from "@/lib/constants";
+import { VOTING_CARDS, TEAM_AVATARS } from "@/lib/constants";
 import { usePlayerStore } from "@/lib/store/playerStore";
 import { useGameStore } from "@/lib/store/gameStore";
 import { useGameRealtime } from "@/lib/hooks/useGameRealtime";
@@ -18,6 +19,9 @@ export default function GameRoomPage() {
   const gameId = params.gameId as string;
 
   const currentPlayer = usePlayerStore((state) => state.currentPlayer);
+  const setCurrentPlayer = usePlayerStore((state) => state.setCurrentPlayer);
+  const getSession = usePlayerStore((state) => state.getSession);
+  const clearSession = usePlayerStore((state) => state.clearSession);
   const myVote = usePlayerStore((state) => state.myVote);
   const setMyVote = usePlayerStore((state) => state.setMyVote);
 
@@ -42,8 +46,29 @@ export default function GameRoomPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const countdownStartedRef = useRef(false);
 
+  // Profile menu state
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showNameModal, setShowNameModal] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
   // Subscribe to realtime updates
   useGameRealtime(gameId);
+
+  // Close profile menu on click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+    }
+    if (showProfileMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [showProfileMenu]);
 
   // Check if all non-spectators have voted
   const votingPlayers = players.filter((p) => !p.is_spectator);
@@ -109,12 +134,29 @@ export default function GameRoomPage() {
     }
   }, [isRevealed]);
 
-  // Redirect to join if no player
+  // Try to restore session or redirect to join
   useEffect(() => {
-    if (!currentPlayer) {
+    if (currentPlayer) return; // Already have player
+
+    // Try to restore from saved session
+    const savedPlayerId = getSession(gameId);
+    if (savedPlayerId && players.length > 0) {
+      const existingPlayer = players.find((p) => p.id === savedPlayerId);
+      if (existingPlayer) {
+        // Restore session
+        setCurrentPlayer(existingPlayer);
+        return;
+      } else {
+        // Player was removed — clear stale session
+        clearSession(gameId);
+      }
+    }
+
+    // No valid session — redirect to join (but only after players loaded)
+    if (players.length > 0 || !savedPlayerId) {
       router.push(`/game/${gameId}/join`);
     }
-  }, [currentPlayer, gameId, router]);
+  }, [currentPlayer, players, gameId, router, getSession, setCurrentPlayer, clearSession]);
 
   const handleCopyLink = async () => {
     const url = `${window.location.origin}/game/${gameId}/join`;
@@ -122,6 +164,61 @@ export default function GameRoomPage() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const handleLeaveGame = () => {
+    clearSession(gameId);
+    router.push("/");
+  };
+
+  // Update player name
+  const handleUpdateName = async () => {
+    if (!currentPlayer || !newName.trim()) return;
+    setIsUpdatingProfile(true);
+    try {
+      const res = await fetch(`/api/players/${currentPlayer.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName.trim() }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setCurrentPlayer({ ...currentPlayer, name: updated.name });
+        setShowNameModal(false);
+        setNewName("");
+      }
+    } catch (error) {
+      // Silent error
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
+  // Update player avatar
+  const handleUpdateAvatar = async (avatarSrc: string) => {
+    if (!currentPlayer) return;
+    setIsUpdatingProfile(true);
+    try {
+      const res = await fetch(`/api/players/${currentPlayer.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ avatar: avatarSrc }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setCurrentPlayer({ ...currentPlayer, avatar: updated.avatar });
+        setShowAvatarModal(false);
+      }
+    } catch (error) {
+      // Silent error
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
+  // Get taken avatars (excluding current player)
+  const takenAvatars = players
+    .filter((p) => p.id !== currentPlayer?.id && p.avatar)
+    .map((p) => p.avatar);
 
   const handleReveal = async () => {
     if (!isPlayerAdmin) return;
@@ -301,12 +398,45 @@ export default function GameRoomPage() {
                 {copied ? "Copied!" : "Invite"}
               </Button>
 
-              {/* User pill */}
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--bg-surface)] rounded-full">
-                <Avatar src={currentPlayer.avatar} size={28} />
-                <span className="text-sm font-medium text-[var(--text-primary)]">
-                  {currentPlayer.name}
-                </span>
+              {/* User pill with dropdown */}
+              <div className="relative" ref={profileMenuRef}>
+                <button
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-[var(--bg-surface)] rounded-full hover:bg-[var(--border)] transition-colors"
+                >
+                  <Avatar src={currentPlayer.avatar} size={28} />
+                  <span className="text-sm font-medium text-[var(--text-primary)]">
+                    {currentPlayer.name}
+                  </span>
+                  <ChevronDown size={14} className={`text-[var(--text-secondary)] transition-transform ${showProfileMenu ? "rotate-180" : ""}`} />
+                </button>
+
+                {/* Dropdown menu */}
+                {showProfileMenu && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-[var(--border)] py-1 z-50">
+                    <button
+                      onClick={() => {
+                        setNewName(currentPlayer.name);
+                        setShowNameModal(true);
+                        setShowProfileMenu(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors"
+                    >
+                      <User size={16} />
+                      Change Name
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowAvatarModal(true);
+                        setShowProfileMenu(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors"
+                    >
+                      <ImageIcon size={16} />
+                      Change Avatar
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Sidebar toggle */}
@@ -316,6 +446,15 @@ export default function GameRoomPage() {
                 title={sidebarOpen ? "Hide Issues" : "Show Issues"}
               >
                 {sidebarOpen ? <PanelRightClose size={20} /> : <PanelRightOpen size={20} />}
+              </button>
+
+              {/* Leave game */}
+              <button
+                onClick={handleLeaveGame}
+                className="p-2 text-[var(--text-secondary)] hover:text-[var(--danger)] hover:bg-[var(--danger)]/10 rounded-lg transition-colors"
+                title="Leave Game"
+              >
+                <LogOut size={20} />
               </button>
             </div>
           </div>
@@ -460,6 +599,97 @@ export default function GameRoomPage() {
               setHideConfidence(true);
             }}
           />
+        )}
+
+        {/* Change Name Modal */}
+        {showNameModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">
+                Change Name
+              </h2>
+              <Input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Enter new name"
+                className="mb-4"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleUpdateName();
+                }}
+              />
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleUpdateName}
+                  disabled={!newName.trim() || newName.trim() === currentPlayer.name}
+                  isLoading={isUpdatingProfile}
+                  className="flex-1"
+                >
+                  Save
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setShowNameModal(false);
+                    setNewName("");
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Change Avatar Modal */}
+        {showAvatarModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto">
+              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+                Change Avatar
+              </h2>
+              <p className="text-sm text-[var(--text-secondary)] mb-4">
+                Select a new avatar ({TEAM_AVATARS.length - takenAvatars.length} available)
+              </p>
+              <div className="grid grid-cols-4 gap-4 mb-4">
+                {TEAM_AVATARS.map((avatar) => {
+                  const isTaken = takenAvatars.includes(avatar.src);
+                  const isSelected = currentPlayer.avatar === avatar.src;
+                  if (isTaken) return null;
+                  return (
+                    <button
+                      key={avatar.src}
+                      onClick={() => !isSelected && handleUpdateAvatar(avatar.src)}
+                      disabled={isUpdatingProfile}
+                      className={`
+                        relative w-[72px] h-[72px] rounded-full overflow-hidden
+                        transition-all duration-200
+                        ${isSelected
+                          ? "ring-3 ring-[var(--primary)] ring-offset-2"
+                          : "hover:ring-2 hover:ring-[var(--primary)] hover:ring-offset-2"
+                        }
+                        disabled:opacity-50
+                      `}
+                    >
+                      <Avatar src={avatar.src} size={72} />
+                      {isSelected && (
+                        <div className="absolute inset-0 bg-[var(--primary)]/20 flex items-center justify-center">
+                          <Check size={24} className="text-white drop-shadow-md" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <Button
+                variant="secondary"
+                className="w-full"
+                onClick={() => setShowAvatarModal(false)}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
         )}
       </div>
 

@@ -1,9 +1,13 @@
 import Link from "next/link";
+import { FloatingCards } from "@/components/landing/FloatingCards";
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-4 bg-[var(--bg-surface)]">
-      <div className="text-center max-w-md mx-auto">
+    <main className="min-h-screen flex flex-col items-center justify-center p-4 bg-[var(--bg-surface)] relative overflow-hidden">
+      {/* Floating Cards */}
+      <FloatingCards />
+
+      <div className="text-center max-w-md mx-auto relative z-10">
         {/* Badge */}
         <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[var(--primary-light)] text-[var(--primary)] rounded-full text-sm font-medium mb-6">
           <span>🃏</span>

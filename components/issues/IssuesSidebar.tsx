@@ -81,11 +81,15 @@ export function IssuesSidebar({ gameId, isOpen, onClose, onConfidenceVote }: Iss
   const handleSaveEdit = async () => {
     if (!editingIssueId || !editingTitle.trim()) return;
     try {
-      await fetch(`/api/issues/${editingIssueId}`, {
+      const res = await fetch(`/api/issues/${editingIssueId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: editingTitle.trim() }),
       });
+      if (res.ok) {
+        // Update store directly for immediate feedback
+        useGameStore.getState().updateIssue(editingIssueId, { title: editingTitle.trim() });
+      }
     } catch {
       // Silent
     } finally {
@@ -101,7 +105,11 @@ export function IssuesSidebar({ gameId, isOpen, onClose, onConfidenceVote }: Iss
 
   const handleDeleteIssue = async (issueId: string) => {
     try {
-      await fetch(`/api/issues/${issueId}`, { method: "DELETE" });
+      const res = await fetch(`/api/issues/${issueId}`, { method: "DELETE" });
+      if (res.ok) {
+        // Update store directly (Realtime DELETE may not include old.id)
+        useGameStore.getState().removeIssue(issueId);
+      }
     } catch {
       // Silent
     } finally {

@@ -156,7 +156,6 @@
 - [x] Edit issue (inline)
 - [x] Delete issue with confirmation
 - [x] Show total issues count and total points
-- [ ] Drag-and-drop reordering (optional, can defer)
 
 ---
 
@@ -167,7 +166,6 @@
 - [x] Display game URL
 - [x] Copy link button (one-click copy)
 - [x] Show "Copied!" confirmation
-- [ ] QR code generation (optional, can defer)
 
 ---
 
@@ -234,7 +232,63 @@
 
 ---
 
-## Milestone 12: Meme System
+## Milestone 12: Bug Fixes ✅
+> Исправление критичных багов
+
+- [x] Исправить редактирование Issues в sidebar (не работает)
+- [x] Исправить удаление Issues в sidebar (не работает)
+
+---
+
+## Milestone 13: Landing Floating Cards ✅
+> Анимированные карточки на лендинге (как в прототипе)
+
+- [x] Создать FloatingCards компонент
+- [x] 4 карточки с числами Fibonacci по углам экрана
+- [x] Плавная float-анимация (translateY + rotate)
+- [x] Разные цвета (primary, accent, success)
+- [x] Разные animation-delay для каждой карточки
+- [x] pointer-events: none (не мешают кликам)
+
+---
+
+## Milestone 14: Player Profile Menu ✅
+> Смена имени и аватарки через меню в header
+
+- [x] Клик по своей аватарке в header → выпадающее меню
+- [x] Опция "Сменить имя" → модалка с input
+- [x] Опция "Сменить аватарку" → модалка с avatar grid (без уже занятых)
+- [x] API: PATCH /api/players/[id] — обновление имени/аватарки
+- [x] Realtime: изменения видны всем игрокам
+
+---
+
+## Milestone 15: Session Persistence ✅
+> Решение проблемы дублирования игроков при перезаходе
+
+- [x] Сохранять playerId + gameId в localStorage
+- [x] При заходе по ссылке проверять: есть ли сохранённый playerId для этой игры
+- [x] Если есть — пропускать join, сразу в game room
+- [x] Если игрок был удалён из БД — очистить localStorage и показать join
+- [x] Проверка: админ вернулся → он снова админ (creator_id не меняется)
+- [x] Кнопка "Выйти из игры" — очищает localStorage и редиректит на join
+
+---
+
+## Milestone 16: Admin Player Management
+> Контекстное меню для управления игроками (только админ)
+
+- [ ] Правый клик по аватару/имени игрока → контекстное меню
+- [ ] Опция "Переименовать игрока" → модалка с input
+- [ ] Опция "Удалить из игры" → подтверждение → удаление из players
+- [ ] API: PATCH /api/players/[id] — переименование (admin only)
+- [ ] API: DELETE /api/players/[id] — удаление игрока (admin only)
+- [ ] Меню не показывается для самого админа (нельзя себя удалить)
+- [ ] Realtime: удалённый игрок видит сообщение и редирект на лендинг
+
+---
+
+## Milestone 17: Meme System
 > Team personality
 
 - [ ] Create memes folder structure in public/
@@ -247,12 +301,11 @@
   - [ ] Coffee break
   - [ ] Question mark confusion
   - [ ] Random default
-- [ ] Add custom team avatar images
 - [ ] Custom card back designs (optional)
 
 ---
 
-## Milestone 13: Polish & UX
+## Milestone 18: Polish & UX
 > Make it feel good
 
 - [ ] Loading states for all async operations
@@ -266,18 +319,9 @@
 
 ---
 
-## Milestone 14: History & Export
-> Persist and share results
-
-- [ ] Game session persists indefinitely
-- [ ] Export session results to CSV
-- [ ] Export button in header/menu
-- [ ] Include: issue title, final score, individual votes
-- [ ] Browse past games (optional, can defer)
-
 ---
 
-## Milestone 15: Testing & QA
+## Milestone 19: Testing & QA
 > Make sure it works
 
 - [ ] Unit tests for utility functions (average calc, ID generation)
@@ -291,7 +335,7 @@
 
 ---
 
-## Milestone 16: Deployment
+## Milestone 20: Deployment
 > Ship it!
 
 - [x] Create GitHub repository

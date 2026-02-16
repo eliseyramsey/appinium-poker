@@ -6,7 +6,7 @@ interface RouteParams {
   params: Promise<{ gameId: string }>;
 }
 
-// GET /api/games/[gameId] - Get game details
+// GET /api/games/[gameId] - Get game details with players
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     if (!isSupabaseConfigured()) {
@@ -19,23 +19,30 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { gameId } = await params;
     const supabase = getSupabase();
 
-    const { data, error } = await supabase
+    // Fetch game
+    const { data: game, error: gameError } = await supabase
       .from("games")
       .select("*")
       .eq("id", gameId)
       .single();
 
-    if (error) {
-      if (error.code === "PGRST116") {
+    if (gameError) {
+      if (gameError.code === "PGRST116") {
         return NextResponse.json(
           { error: "Game not found" },
           { status: 404 }
         );
       }
-      throw error;
+      throw gameError;
     }
 
-    return NextResponse.json(data);
+    // Fetch players for this game
+    const { data: players } = await supabase
+      .from("players")
+      .select("*")
+      .eq("game_id", gameId);
+
+    return NextResponse.json({ ...game, players: players || [] });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(

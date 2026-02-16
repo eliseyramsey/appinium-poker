@@ -72,9 +72,11 @@ Anonymous play — no registration required.
 | Game Room (`/game/[id]`) | Full | Logo, game name, invite, confidence, user menu |
 
 ### Avatars
-- 8 team member photos (placeholder: randomuser.me)
-- Grid layout for selection
-- Replace with actual team photos later
+- 26 team member photos in `public/avatars/`
+- Each avatar has custom zoom and position for face centering
+- Grid layout for selection (4 columns)
+- Taken avatars hidden from selection (unique per game)
+- Use `public/avatar-picker.html` to adjust face positioning
 
 ---
 
@@ -266,7 +268,8 @@ Edit `styles/globals.css` or `tailwind.config.ts`
 
 ### Add new avatar
 1. Add image to `public/avatars/`
-2. Update avatar list in `/game/[id]/join`
+2. Open `public/avatar-picker.html` to set zoom/position
+3. Add entry to `TEAM_AVATARS` in `lib/constants.ts`
 
 ### Change voting scale
 Edit `lib/constants.ts` → `VOTING_CARDS`
@@ -402,4 +405,106 @@ ALTER PUBLICATION supabase_realtime ADD TABLE confidence_votes;
 **Next Steps:**
 1. Milestone 12: Meme System
 2. Milestone 13: Polish & UX
+3. Deploy to Vercel
+
+---
+
+### 2026-02-16: Team Avatars System (Session 4)
+
+**Completed:**
+- Replaced placeholder avatars with 26 real team member photos
+- Created avatar picker tool (`public/avatar-picker.html`) for face positioning
+- Each avatar supports: zoom (100-400%), x position, y position
+- Created `Avatar` component using `background-image` approach for proper cropping
+- Converted HEIC files to JPG for browser compatibility
+- Renamed problematic files (emoji in filenames, long names)
+
+**Unique Avatar Selection:**
+- Join page fetches existing players and filters out taken avatars
+- Shows count: "Choose Avatar (X available)"
+- Server-side validation in `POST /api/players`:
+  - Returns 409 with `code: "AVATAR_TAKEN"` if avatar already in use
+  - Client shows error message and refreshes available avatars
+- Prevents race condition when two players select same avatar
+
+**UI Improvements:**
+- Player seats repositioned: avatars always outside table, cards closer to table
+- Added `position` prop to `PlayerSeat` component ("top" | "bottom")
+- Top row: avatar above card; Bottom row: card above avatar
+- Increased avatar size to 40px for better visibility
+- Increased gap between players and table (-top-28, -bottom-28)
+
+**New Files:**
+- `components/ui/Avatar.tsx` — reusable avatar with zoom/position
+- `public/avatar-picker.html` — tool for adjusting face center
+- `public/avatars/` — 26 team photos (JPG/PNG)
+
+**Constants Update (`lib/constants.ts`):**
+```typescript
+export const TEAM_AVATARS = [
+  { src: "/avatars/IMG_2292.PNG", zoom: 180, x: 45, y: 37 },
+  // ... 26 avatars with custom positioning
+] as const;
+
+export function getAvatarStyle(src: string | null): {
+  backgroundSize: string;
+  backgroundPosition: string;
+}
+```
+
+**PR:** https://github.com/eliseyramsey/appinium-poker/pull/1
+
+---
+
+### 2026-02-16: Bug Fixes, Session Persistence & Profile Menu (Session 5)
+
+**Completed:**
+
+- **Milestone 12: Bug Fixes** — Fixed Issues edit/delete not working
+  - Problem: Supabase Realtime DELETE events don't include `payload.old.id`
+  - Solution: Update Zustand store directly after successful API call
+
+- **Milestone 15: Session Persistence** — Prevent duplicate players on rejoin
+  - Created separate localStorage key `appinium-poker-sessions` (outside Zustand persist)
+  - Join page checks for saved session and auto-redirects to game room
+  - Game room restores player from saved session on load
+  - "Leave Game" button clears session and redirects to landing
+  - Admin returns as admin (creator_id preserved in DB)
+
+- **Milestone 13: Landing Floating Cards** — Animated cards and avatars
+  - Created `FloatingCards` component with 4 Fibonacci cards (5, 8, 13, 21)
+  - Added 3 floating team avatars for fun
+  - CSS keyframes injected via useEffect (Tailwind v4 compatibility)
+  - 8s float animation with staggered delays
+  - pointer-events: none (don't block clicks)
+
+- **Milestone 14: Player Profile Menu** — Change name/avatar in-game
+  - Dropdown menu on avatar click in header (ChevronDown indicator)
+  - "Change Name" modal with input and Enter key support
+  - "Change Avatar" modal with grid (taken avatars hidden, current marked ✓)
+  - Created `PATCH /api/players/[playerId]` for updates
+  - Avatar uniqueness validated server-side (409 if taken)
+  - Fixed avatar selection ring UI (ring-offset for proper spacing)
+
+**New Files:**
+- `app/api/players/[playerId]/route.ts` — PATCH endpoint for player updates
+- `components/landing/FloatingCards.tsx` — Animated landing decoration
+
+**API Updates:**
+- `GET /api/games/[id]` — Now returns players array for session checking
+- `PATCH /api/players/[id]` — Update name/avatar with validation
+
+**Technical Notes:**
+- Zustand persist has race condition on fast redirects — use direct localStorage
+- Tailwind v4 custom keyframes need inline styles or useEffect injection
+- ring-offset-2 creates proper spacing for selection indicators
+
+**Current State:**
+- Milestones 12, 13, 14, 15 complete
+- Profile menu fully functional
+- Session persistence working
+
+**Next Steps:**
+1. Milestone 16: Admin Player Management (right-click context menu)
+2. Milestone 17: Meme System
 3. Deploy to Vercel
