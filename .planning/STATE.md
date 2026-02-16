@@ -15,17 +15,20 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 | 2. Meme System | ✓ Complete | 100% |
 | 3. Deploy | ✓ Complete | 100% |
 | 4. Bug Fixes | ✓ Complete | 100% |
-| 5. Quick Wins + Tests | In Progress | 50% |
+| 5. Quick Wins + Tests | In Progress | 75% |
 
 **Overall:** 4/5 phases complete
 
 ## Current Phase
 
-**Phase 5: Quick Wins + Tests** — IN PROGRESS (Plan 2/4 complete)
+**Phase 5: Quick Wins + Tests** — IN PROGRESS (Plan 3/4 complete)
 - Plan 01: UX Quick Wins I (COMPLETE)
   - QW-01: Game Not Found page - DONE
   - QW-05: Empty state improvement - DONE
-- Plan 02: UX Quick Wins II (loading states)
+- Plan 02: UX Quick Wins II (COMPLETE)
+  - QW-02: Loading states - DONE
+  - QW-03: Keyboard shortcuts - DONE
+  - QW-04: Error boundaries - DONE
 - Plan 03: Testing Setup (COMPLETE)
   - TEST-01: Vitest setup - DONE
 - Plan 04: Unit Tests
@@ -109,6 +112,9 @@ None - all planned work complete.
 - Added isGameLoaded flag to Zustand store for detecting initial data load completion
 - jsdom v24 instead of v28 for ESM compatibility with Vitest
 - Added type: module to package.json for Vitest/Vite ESM module resolution
+- ErrorBoundaryProvider wrapper to use ErrorBoundary from server component layout
+- Keyboard hints hidden on mobile, visible on desktop hover for cleaner mobile UX
+- Empty dependency array for keyboard useEffect to avoid stale closure issues
 
 ## Quick Tasks Completed
 
@@ -168,5 +174,13 @@ None - all planned work complete.
   - Fixed ESM compatibility with jsdom v24
   - Duration: 3 minutes
 
+### 2026-02-17: Phase 5 Plan 02 Complete
+- Plan 02: UX Quick Wins II (QW-02, QW-03, QW-04)
+  - Added loading state to vote card selection with spinner
+  - Implemented keyboard shortcuts (1-0 for cards, Escape deselect, Enter reveal)
+  - Created ErrorBoundary component with retry functionality
+  - Wrapped app in ErrorBoundaryProvider via layout.tsx
+  - Duration: 6 minutes
+
 ---
-*Last updated: 2026-02-17 - Plan 01 complete*
+*Last updated: 2026-02-17 - Plan 02 complete*
