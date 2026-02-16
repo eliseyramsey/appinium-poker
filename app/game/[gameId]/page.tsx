@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Copy, Check, PanelRightOpen, PanelRightClose, LogOut, User, ImageIcon, ChevronDown, UserX } from "lucide-react";
+import { Check, UserX } from "lucide-react";
 import { IssuesSidebar } from "@/components/issues/IssuesSidebar";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -13,7 +13,8 @@ import { selectMeme, type Meme } from "@/components/memes/memeData";
 import { PlayerSeat } from "@/components/game/PlayerSeat";
 import { CardSelector } from "@/components/game/CardSelector";
 import { ConfidenceVoteModal } from "@/components/confidence/ConfidenceVoteModal";
-import { TEAM_AVATARS, DEFAULT_GAME_NAME } from "@/lib/constants";
+import { GameHeader } from "@/components/layout/GameHeader";
+import { TEAM_AVATARS } from "@/lib/constants";
 import { usePlayerStore } from "@/lib/store/playerStore";
 import { useGameStore } from "@/lib/store/gameStore";
 import { useGameRealtime } from "@/lib/hooks/useGameRealtime";
@@ -43,7 +44,6 @@ export default function GameRoomPage() {
   const isConfidenceVoting = game?.confidence_status === "voting";
   const isConfidenceRevealed = game?.confidence_status === "revealed";
 
-  const [copied, setCopied] = useState(false);
   const [showConfidence, setShowConfidence] = useState(false);
   const [hideConfidence, setHideConfidence] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -52,13 +52,11 @@ export default function GameRoomPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const countdownStartedRef = useRef(false);
 
-  // Profile menu state
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  // Profile modal state
   const [showNameModal, setShowNameModal] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [newName, setNewName] = useState("");
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
-  const profileMenuRef = useRef<HTMLDivElement>(null);
 
   // Context menu state (admin player management)
   const [contextMenu, setContextMenu] = useState<{
@@ -77,19 +75,6 @@ export default function GameRoomPage() {
 
   // Subscribe to realtime updates
   useGameRealtime(gameId);
-
-  // Close profile menu on click outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
-        setShowProfileMenu(false);
-      }
-    }
-    if (showProfileMenu) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [showProfileMenu]);
 
   // Check if all non-spectators have voted
   const votingPlayers = players.filter((p) => !p.is_spectator);
@@ -200,13 +185,6 @@ export default function GameRoomPage() {
       router.push(`/game/${gameId}/join`);
     }
   }, [currentPlayer, players, gameId, router, getSession, setCurrentPlayer, clearSession]);
-
-  const handleCopyLink = async () => {
-    const url = `${window.location.origin}/game/${gameId}/join`;
-    await navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   const handleLeaveGame = () => {
     clearSession(gameId);
@@ -503,97 +481,20 @@ export default function GameRoomPage() {
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="bg-white border-b border-[var(--border)] px-4 py-3">
-          <div className="flex items-center justify-between">
-            {/* Left: Logo + Game Name */}
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[var(--primary)] rounded-lg flex items-center justify-center text-white text-xl">
-                🃏
-              </div>
-              <div className="px-3 py-1.5 bg-[var(--bg-surface)] rounded-lg text-sm font-medium text-[var(--text-primary)]">
-                {currentIssue?.title || DEFAULT_GAME_NAME}
-              </div>
-            </div>
-
-            {/* Right: Controls */}
-            <div className="flex items-center gap-3">
-              {/* Admin badge */}
-              {isPlayerAdmin && (
-                <span className="px-2 py-1 text-xs font-medium bg-[var(--accent)]/20 text-[var(--accent-hover)] rounded">
-                  👑 Admin
-                </span>
-              )}
-
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleCopyLink}
-              >
-                {copied ? <Check size={16} /> : <Copy size={16} />}
-                {copied ? "Copied!" : "Invite"}
-              </Button>
-
-              {/* User pill with dropdown */}
-              <div className="relative" ref={profileMenuRef}>
-                <button
-                  onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-[var(--bg-surface)] rounded-full hover:bg-[var(--border)] transition-colors"
-                >
-                  <Avatar src={currentPlayer.avatar} size={28} />
-                  <span className="text-sm font-medium text-[var(--text-primary)]">
-                    {currentPlayer.name}
-                  </span>
-                  <ChevronDown size={14} className={`text-[var(--text-secondary)] transition-transform ${showProfileMenu ? "rotate-180" : ""}`} />
-                </button>
-
-                {/* Dropdown menu */}
-                {showProfileMenu && (
-                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-[var(--border)] py-1 z-50">
-                    <button
-                      onClick={() => {
-                        setNewName(currentPlayer.name);
-                        setShowNameModal(true);
-                        setShowProfileMenu(false);
-                      }}
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors"
-                    >
-                      <User size={16} />
-                      Change Name
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowAvatarModal(true);
-                        setShowProfileMenu(false);
-                      }}
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors"
-                    >
-                      <ImageIcon size={16} />
-                      Change Avatar
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Sidebar toggle */}
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] rounded-lg transition-colors"
-                title={sidebarOpen ? "Hide Issues" : "Show Issues"}
-              >
-                {sidebarOpen ? <PanelRightClose size={20} /> : <PanelRightOpen size={20} />}
-              </button>
-
-              {/* Leave game */}
-              <button
-                onClick={handleLeaveGame}
-                className="p-2 text-[var(--text-secondary)] hover:text-[var(--danger)] hover:bg-[var(--danger)]/10 rounded-lg transition-colors"
-                title="Leave Game"
-              >
-                <LogOut size={20} />
-              </button>
-            </div>
-          </div>
-        </header>
+        <GameHeader
+          gameId={gameId}
+          currentPlayer={currentPlayer}
+          currentIssueTitle={currentIssue?.title ?? null}
+          isAdmin={isPlayerAdmin}
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          onLeaveGame={handleLeaveGame}
+          onOpenNameModal={() => {
+            setNewName(currentPlayer.name);
+            setShowNameModal(true);
+          }}
+          onOpenAvatarModal={() => setShowAvatarModal(true)}
+        />
 
       {/* Main content */}
       <main className="flex-1 flex flex-col items-center justify-center p-8 bg-[var(--bg-surface)]">
