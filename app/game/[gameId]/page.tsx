@@ -70,7 +70,7 @@ export default function GameRoomPage() {
 
   // Meme state
   const [currentMeme, setCurrentMeme] = useState<Meme | null>(null);
-  const [memeShownForIssue, setMemeShownForIssue] = useState<string | null>(null);
+  const prevIsRevealedRef = useRef<boolean | null>(null); // Track previous state to detect transitions
 
   // Subscribe to realtime updates
   useGameRealtime(gameId);
@@ -152,23 +152,27 @@ export default function GameRoomPage() {
     }
   }, [isRevealed]);
 
-  // Show meme when votes are revealed
+  // Show meme when votes are revealed (only on transition, not on page reload)
   useEffect(() => {
-    if (!isRevealed || !game?.current_issue_id) return;
+    const wasRevealed = prevIsRevealedRef.current;
+    prevIsRevealedRef.current = isRevealed;
 
-    // Don't show meme twice for same issue
-    if (memeShownForIssue === game.current_issue_id) return;
+    // Only show meme on transition from not-revealed to revealed
+    // Skip if: already revealed on load (wasRevealed === null means first render)
+    if (!isRevealed || wasRevealed === true || wasRevealed === null) return;
+    if (!game?.current_issue_id) return;
 
     // Get all vote values
     const voteValues = votes.map((v) => v.value);
     if (myVote) voteValues.push(myVote);
 
     if (voteValues.length > 0) {
-      const meme = selectMeme(voteValues);
+      // Use deterministic seed so all players see the same meme
+      const seed = `${game.current_issue_id}-${voteValues.sort().join(",")}`;
+      const meme = selectMeme(voteValues, seed);
       setCurrentMeme(meme);
-      setMemeShownForIssue(game.current_issue_id);
     }
-  }, [isRevealed, votes, myVote, game?.current_issue_id, memeShownForIssue]);
+  }, [isRevealed, votes, myVote, game?.current_issue_id]);
 
   // Try to restore session or redirect to join
   useEffect(() => {
@@ -924,6 +928,9 @@ function PlayerSeat({
   const hasVoted = vote !== null;
   const hasConfidenceVote = confidenceVote !== null && confidenceVote !== undefined;
 
+  // Convert vote value to display label (e.g., "coffee" -> "☕")
+  const voteLabel = vote ? (VOTING_CARDS.find(c => c.value === vote)?.label ?? vote) : null;
+
   const card = (
     <div
       className={`
@@ -945,7 +952,7 @@ function PlayerSeat({
           ? CONFIDENCE_EMOJIS[confidenceVote!]
           : "?"
         : isRevealed && hasVoted
-          ? vote
+          ? voteLabel
           : hasVoted
             ? "✓"
             : "?"

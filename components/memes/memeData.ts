@@ -126,16 +126,34 @@ export function getMemeCategory(votes: string[]): MemeCategory {
 }
 
 /**
- * Select a random meme from the appropriate category
+ * Simple hash function for deterministic random
  */
-export function selectMeme(votes: string[]): Meme | null {
+function hashCode(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash);
+}
+
+/**
+ * Select a meme from the appropriate category
+ * Uses seed for deterministic selection so all players see the same meme
+ */
+export function selectMeme(votes: string[], seed?: string): Meme | null {
   const category = getMemeCategory(votes);
   const memes = MEMES[category];
 
   if (memes.length === 0) return null;
 
-  const randomIndex = Math.floor(Math.random() * memes.length);
-  return memes[randomIndex];
+  // Use seed for deterministic selection, or random if no seed
+  const index = seed
+    ? hashCode(seed) % memes.length
+    : Math.floor(Math.random() * memes.length);
+
+  return memes[index];
 }
 
 /**
