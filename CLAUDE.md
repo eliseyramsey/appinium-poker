@@ -558,9 +558,21 @@ export function getAvatarStyle(src: string | null): {
 **Current State:**
 - Phase 1 ✓ complete
 - Phase 2 ✓ complete (needs meme images)
-- Phase 3 ○ pending (user action: vercel login)
+- Phase 3 ◆ in progress — deployed but needs env vars
 
-**Pending Tasks:**
-1. Add ~50 Russian meme images to `public/memes/[category]/`
-2. Run `npx vercel login` and `npx vercel --prod`
-3. Set environment variables in Vercel dashboard
+**Production URL:** https://appinium-poker-rw1g.vercel.app/
+
+**BLOCKER — Environment Variables not set:**
+App returns 503 because Supabase credentials missing in Vercel.
+
+**Fix:**
+1. Vercel Dashboard → Project → Settings → Environment Variables
+2. Add from `.env.local`:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+3. Redeploy (Deployments → ... → Redeploy)
+
+**Remaining Tasks:**
+1. ⚠️ **Set Vercel env vars** ← do this first!
+2. Add ~50 Russian meme images to `public/memes/[category]/`
+3. Test multiplayer on production
