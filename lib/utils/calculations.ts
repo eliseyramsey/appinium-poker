@@ -48,16 +48,3 @@ export function getVoteSpread(votes: Vote[]): number {
   const max = Math.max(...numericVotes);
   return max - min;
 }
-
-/**
- * Determine meme category based on votes
- */
-export type MemeCategory = "consensus" | "chaos" | "confused" | "break" | "random";
-
-export function getMemeCategory(votes: Vote[]): MemeCategory {
-  if (hasConsensus(votes)) return "consensus";
-  if (votes.some((v) => v.value === "coffee")) return "break";
-  if (votes.some((v) => v.value === "?")) return "confused";
-  if (getVoteSpread(votes) > 5) return "chaos";
-  return "random";
-}

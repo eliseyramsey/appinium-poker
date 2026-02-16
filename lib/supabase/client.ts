@@ -27,6 +27,3 @@ export function getSupabase(): SupabaseClient<Database> {
   }
   return _supabase;
 }
-
-// Alias for getSupabase - always use this singleton
-export const supabase = isSupabaseConfigured() ? getSupabase() : (null as unknown as SupabaseClient<Database>);
