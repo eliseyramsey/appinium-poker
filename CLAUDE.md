@@ -508,3 +508,59 @@ export function getAvatarStyle(src: string | null): {
 1. Milestone 16: Admin Player Management (right-click context menu)
 2. Milestone 17: Meme System
 3. Deploy to Vercel
+
+---
+
+### 2026-02-16: Admin Management & Meme System (Session 6)
+
+**GSD Planning System:**
+- Initialized `.planning/` directory with PROJECT.md, REQUIREMENTS.md, ROADMAP.md
+- Created config.json (YOLO mode, quick depth, parallel execution)
+- Structured approach with phases instead of milestones
+
+**Completed:**
+
+- **Phase 1: Admin Player Management** — Right-click context menu
+  - Created `ContextMenu` component with three actions
+  - Kick player: DELETE /api/players/[id] with admin validation
+  - Make spectator: PATCH is_spectator with admin validation
+  - Transfer admin: PATCH creator_id on games table
+  - "Kicked" modal shows when player is removed from game
+  - Spectator indicator on player name ("player (spectator)")
+
+- **Phase 2: Meme System** — Show memes after reveal
+  - Created `memeData.ts` with category logic:
+    - consensus: all votes identical
+    - chaos: vote spread > 5 points
+    - confused: someone voted "?"
+    - break: someone voted "☕"
+    - random: default fallback
+  - Created `MemeOverlay` component with 5s auto-close countdown
+  - Graceful fallback when images not found (shows caption)
+  - TODO: Add actual meme images to public/memes/
+
+- **Phase 3: Deploy** — Instructions created
+  - Created `.planning/phases/3/DEPLOY.md` with step-by-step guide
+  - Requires `npx vercel login` for authentication
+  - Environment variables: SUPABASE_URL, SUPABASE_ANON_KEY, APP_URL
+
+**New Files:**
+- `components/ui/ContextMenu.tsx` — Right-click player management
+- `components/memes/memeData.ts` — Meme selection logic
+- `components/memes/MemeOverlay.tsx` — Meme display modal
+- `.planning/` — Project planning structure
+
+**API Updates:**
+- `PATCH /api/players/[id]` — Added is_spectator with admin check
+- `DELETE /api/players/[id]` — Kick player (admin only)
+- `PATCH /api/games/[id]` — Added newCreatorId for admin transfer
+
+**Current State:**
+- Phase 1 ✓ complete
+- Phase 2 ✓ complete (needs meme images)
+- Phase 3 ○ pending (user action: vercel login)
+
+**Pending Tasks:**
+1. Add ~50 Russian meme images to `public/memes/[category]/`
+2. Run `npx vercel login` and `npx vercel --prod`
+3. Set environment variables in Vercel dashboard
