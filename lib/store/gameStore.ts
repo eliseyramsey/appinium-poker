@@ -12,9 +12,11 @@ interface GameState {
   // Computed
   currentIssue: Issue | null;
   isRevealed: boolean;
+  isGameLoaded: boolean; // True after initial fetch completes (game found or not)
 
   // Actions
   setGame: (game: Game | null) => void;
+  setGameLoaded: (loaded: boolean) => void;
   setPlayers: (players: Player[]) => void;
   addPlayer: (player: Player) => void;
   removePlayer: (playerId: string) => void;
@@ -46,6 +48,7 @@ const initialState = {
   confidenceVotes: [],
   currentIssue: null,
   isRevealed: false,
+  isGameLoaded: false,
 };
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -59,6 +62,8 @@ export const useGameStore = create<GameState>((set, get) => ({
         ? get().issues.find((i) => i.id === game.current_issue_id) || null
         : null,
     }),
+
+  setGameLoaded: (loaded) => set({ isGameLoaded: loaded }),
 
   setPlayers: (players) => set({ players }),
 

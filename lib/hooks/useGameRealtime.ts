@@ -30,6 +30,8 @@ export function useGameRealtime(gameId: string | null) {
         store.setGame(game as Game);
         store.setRevealed((game as Game).status === "revealed");
       }
+      // Mark as loaded (even if game not found)
+      store.setGameLoaded(true);
 
       // Fetch players
       const { data: players } = await supabase
@@ -180,6 +182,8 @@ export function useGameRealtime(gameId: string | null) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
+      // Reset loaded state for next game
+      store.setGameLoaded(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     // Intentionally limited to [gameId] only:

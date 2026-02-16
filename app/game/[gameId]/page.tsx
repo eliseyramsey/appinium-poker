@@ -17,6 +17,7 @@ import { usePlayerStore } from "@/lib/store/playerStore";
 import { useGameStore } from "@/lib/store/gameStore";
 import { useGameRealtime } from "@/lib/hooks/useGameRealtime";
 import { calculateAverage } from "@/lib/utils/calculations";
+import GameNotFound from "./not-found";
 
 function GameRoomContent() {
   const params = useParams();
@@ -35,6 +36,7 @@ function GameRoomContent() {
   const players = useGameStore((state) => state.players);
   const votes = useGameStore((state) => state.votes);
   const isRevealed = useGameStore((state) => state.isRevealed);
+  const isGameLoaded = useGameStore((state) => state.isGameLoaded);
   const currentIssue = useGameStore((state) => state.currentIssue);
   const isAdmin = useGameStore((state) => state.isAdmin);
   const confidenceVotes = useGameStore((state) => state.confidenceVotes);
@@ -514,6 +516,11 @@ function GameRoomContent() {
 
   // Check if at least one player has voted
   const hasVotes = votes.length > 0 || !!myVote;
+
+  // Show 404 if game loaded but not found
+  if (isGameLoaded && !game) {
+    return <GameNotFound />;
+  }
 
   if (!currentPlayer) {
     return null;
