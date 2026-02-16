@@ -1,7 +1,7 @@
 # Roadmap: Appinium Poker
 
 **Created:** 2026-02-16
-**Phases:** 4
+**Phases:** 5
 **Core Value:** Команда может быстро и весело оценить задачи в Story Points
 
 ## Overview
@@ -12,6 +12,7 @@
 | 2 | Meme System | Мемы показываются после reveal | MEME-01, MEME-02, MEME-03, MEME-04 | Complete |
 | 3 | Deploy | Приложение доступно публично | DEPLOY-01, DEPLOY-02, DEPLOY-03 | Complete |
 | 4 | Bug Fixes | Исправить security и quality баги | BUGS-01 to BUGS-14 | Complete |
+| 5 | Quick Wins + Tests | UX polish и test coverage | QW-01 to QW-05, TEST-01 to TEST-03 | Planned |
 
 ---
 
@@ -120,4 +121,43 @@ Plans:
 
 ---
 
+## Phase 5: Quick Wins + Tests
+
+**Goal:** UX polish из Product Review + базовое покрытие тестами
+
+**Requirements:**
+
+*Quick Wins (UX):*
+- QW-01: Game Not Found page (404 для несуществующих игр)
+- QW-02: Loading states на async операциях
+- QW-03: Keyboard shortcuts (Enter=reveal, 1-9=vote, Escape=deselect)
+- QW-04: Error boundaries (graceful fallback при ошибках)
+- QW-05: Empty state improvement для Issues sidebar
+
+*Testing:*
+- TEST-01: Setup Vitest и testing-library
+- TEST-02: Unit tests для utils (calculateAverage, generateGameId, getMemeCategory)
+- TEST-03: Component tests (Button, Input, CardSelector)
+
+**Success Criteria:**
+1. При переходе по несуществующей ссылке — friendly "Game not found" страница
+2. Все кнопки показывают spinner во время loading
+3. Keyboard shortcuts работают в game room
+4. Ошибка в компоненте не крашит всю страницу
+5. `npm run test` запускает Vitest и все тесты проходят
+6. Coverage: utils 100%, components 80%+
+
+**Depends on:** Phase 4
+
+**Plans:** 4 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Game Not Found + Empty State (QW-01, QW-05)
+- [ ] 05-02-PLAN.md — Loading States + Keyboard + Error Boundary (QW-02, QW-03, QW-04)
+- [ ] 05-03-PLAN.md — Vitest Setup (TEST-01)
+- [ ] 05-04-PLAN.md — Unit + Component Tests (TEST-02, TEST-03)
+
+---
+
 *Roadmap created: 2026-02-16*
+*Updated: 2026-02-17 — Phase 5 planned*
