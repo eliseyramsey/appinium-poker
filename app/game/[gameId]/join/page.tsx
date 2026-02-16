@@ -169,8 +169,9 @@ export default function JoinGamePage() {
       }
 
       router.push(`/game/${gameId}`);
-    } catch (error) {
+    } catch {
       setIsLoading(false);
+      setError("Failed to join game. Please try again.");
     }
   };
 
