@@ -153,6 +153,13 @@ None - all planned work complete.
 - Added Phase 5: Quick Wins + Tests to roadmap
 - Requirements: QW-01 to QW-05 (UX), TEST-01 to TEST-03 (testing)
 
+### 2026-02-17: Phase 5 Plan 01 Complete
+- Plan 01: UX Quick Wins I (QW-01, QW-05)
+  - Created 404 Game Not Found page with Appinium branding
+  - Added isGameLoaded flag to gameStore for load detection
+  - Improved Issues sidebar empty state with icon, dashed border, role-specific messaging
+  - Duration: 3 minutes
+
 ### 2026-02-17: Phase 5 Plan 03 Complete
 - Plan 03: Testing Setup (TEST-01)
   - Installed Vitest, React Testing Library, jest-dom
@@ -162,4 +169,4 @@ None - all planned work complete.
   - Duration: 3 minutes
 
 ---
-*Last updated: 2026-02-17 - Plan 03 complete*
+*Last updated: 2026-02-17 - Plan 01 complete*
