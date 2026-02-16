@@ -10,18 +10,28 @@ interface MemeOverlayProps {
   autoCloseDelay?: number; // ms, 0 to disable
 }
 
-export function MemeOverlay({ meme, onClose, autoCloseDelay = 5000 }: MemeOverlayProps) {
+export function MemeOverlay({ meme, onClose, autoCloseDelay = 4000 }: MemeOverlayProps) {
   const [imageError, setImageError] = useState(false);
   const [countdown, setCountdown] = useState(autoCloseDelay > 0 ? Math.ceil(autoCloseDelay / 1000) : 0);
+  const [isExiting, setIsExiting] = useState(false);
+
+  // Handle close with exit animation
+  const handleClose = () => {
+    setIsExiting(true);
+    setTimeout(() => {
+      onClose();
+      setIsExiting(false);
+    }, 200);
+  };
 
   // Auto-close timer
   useEffect(() => {
-    if (!meme || autoCloseDelay <= 0) return;
+    if (!meme || autoCloseDelay <= 0 || isExiting) return;
 
     const interval = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          onClose();
+          handleClose();
           return 0;
         }
         return prev - 1;
@@ -29,11 +39,12 @@ export function MemeOverlay({ meme, onClose, autoCloseDelay = 5000 }: MemeOverla
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [meme, autoCloseDelay, onClose]);
+  }, [meme, autoCloseDelay, isExiting]);
 
-  // Reset error state when meme changes
+  // Reset state when meme changes
   useEffect(() => {
     setImageError(false);
+    setIsExiting(false);
     setCountdown(autoCloseDelay > 0 ? Math.ceil(autoCloseDelay / 1000) : 0);
   }, [meme, autoCloseDelay]);
 
@@ -41,56 +52,49 @@ export function MemeOverlay({ meme, onClose, autoCloseDelay = 5000 }: MemeOverla
 
   return (
     <div
-      className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 cursor-pointer"
-      onClick={onClose}
+      className={`
+        fixed bottom-6 right-6 z-50 max-w-sm w-full
+        transition-transform duration-200 ease-out
+        ${isExiting ? "translate-x-[120%]" : "translate-x-0 animate-in slide-in-from-right duration-300"}
+      `}
     >
-      <div
-        className="relative max-w-2xl w-full animate-in zoom-in-95 duration-200"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="relative bg-white rounded-2xl overflow-hidden shadow-2xl">
         {/* Close button */}
         <button
-          onClick={onClose}
-          className="absolute -top-3 -right-3 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-100 transition-colors z-10"
+          onClick={handleClose}
+          className="absolute top-2 right-2 w-8 h-8 bg-black/30 hover:bg-black/50 rounded-full flex items-center justify-center transition-colors z-10"
         >
-          <X size={20} />
+          <X size={16} className="text-white" />
         </button>
 
         {/* Countdown badge */}
         {countdown > 0 && (
-          <div className="absolute -top-3 -left-3 w-10 h-10 bg-[var(--primary)] text-white rounded-full shadow-lg flex items-center justify-center font-bold z-10">
+          <div className="absolute top-2 left-2 w-8 h-8 bg-[var(--primary)] text-white rounded-full flex items-center justify-center font-bold text-sm z-10">
             {countdown}
           </div>
         )}
 
         {/* Meme image */}
-        <div className="bg-white rounded-2xl overflow-hidden shadow-2xl">
-          {imageError ? (
-            <div className="w-full h-80 flex items-center justify-center bg-gradient-to-br from-[var(--primary-light)] to-[var(--bg-surface)]">
-              <div className="text-center px-8">
-                <div className="text-8xl mb-6">{meme.caption?.split(" ")[0] || "🎲"}</div>
-                <p className="text-2xl font-bold text-[var(--text-primary)]">
-                  {meme.caption || meme.alt}
-                </p>
-                <p className="text-xs text-[var(--text-secondary)] mt-4">
-                  Добавь мемы в public/memes/
-                </p>
-              </div>
+        {imageError ? (
+          <div className="w-full h-48 flex items-center justify-center bg-gradient-to-br from-[var(--primary-light)] to-[var(--bg-surface)]">
+            <div className="text-center px-4">
+              <div className="text-5xl mb-3">{meme.caption?.split(" ")[0] || "🎲"}</div>
+              <p className="text-lg font-bold text-[var(--text-primary)]">
+                {meme.caption || meme.alt}
+              </p>
+              <p className="text-xs text-[var(--text-secondary)] mt-2">
+                Добавь мемы в public/memes/
+              </p>
             </div>
-          ) : (
-            <img
-              src={meme.src}
-              alt={meme.alt}
-              className="w-full h-auto max-h-[70vh] object-contain"
-              onError={() => setImageError(true)}
-            />
-          )}
-        </div>
-
-        {/* Click hint */}
-        <p className="text-center text-white/70 text-sm mt-4">
-          Кликни чтобы закрыть
-        </p>
+          </div>
+        ) : (
+          <img
+            src={meme.src}
+            alt={meme.alt}
+            className="w-full h-auto max-h-64 object-contain"
+            onError={() => setImageError(true)}
+          />
+        )}
       </div>
     </div>
   );
