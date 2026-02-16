@@ -181,5 +181,10 @@ export function useGameRealtime(gameId: string | null) {
         channelRef.current = null;
       }
     };
-  }, [gameId]); // Only re-run when gameId changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Intentionally limited to [gameId] only:
+    // - store methods (setGame, setPlayers, etc.) are stable refs from Zustand
+    // - We don't want to re-subscribe on every state change
+    // - Re-subscribing causes WebSocket churn and potential message loss
+  }, [gameId]);
 }
