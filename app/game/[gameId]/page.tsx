@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Avatar } from "@/components/ui/Avatar";
 import { ContextMenu } from "@/components/ui/ContextMenu";
+import { MemeOverlay } from "@/components/memes/MemeOverlay";
+import { selectMeme, type Meme } from "@/components/memes/memeData";
 import { VOTING_CARDS, TEAM_AVATARS } from "@/lib/constants";
 import { usePlayerStore } from "@/lib/store/playerStore";
 import { useGameStore } from "@/lib/store/gameStore";
@@ -65,6 +67,10 @@ export default function GameRoomPage() {
   } | null>(null);
   const [isContextMenuLoading, setIsContextMenuLoading] = useState(false);
   const [wasKicked, setWasKicked] = useState(false);
+
+  // Meme state
+  const [currentMeme, setCurrentMeme] = useState<Meme | null>(null);
+  const [memeShownForIssue, setMemeShownForIssue] = useState<string | null>(null);
 
   // Subscribe to realtime updates
   useGameRealtime(gameId);
@@ -145,6 +151,24 @@ export default function GameRoomPage() {
       setIsRevealing(false);
     }
   }, [isRevealed]);
+
+  // Show meme when votes are revealed
+  useEffect(() => {
+    if (!isRevealed || !game?.current_issue_id) return;
+
+    // Don't show meme twice for same issue
+    if (memeShownForIssue === game.current_issue_id) return;
+
+    // Get all vote values
+    const voteValues = votes.map((v) => v.value);
+    if (myVote) voteValues.push(myVote);
+
+    if (voteValues.length > 0) {
+      const meme = selectMeme(voteValues);
+      setCurrentMeme(meme);
+      setMemeShownForIssue(game.current_issue_id);
+    }
+  }, [isRevealed, votes, myVote, game?.current_issue_id, memeShownForIssue]);
 
   // Try to restore session or redirect to join
   useEffect(() => {
@@ -844,6 +868,13 @@ export default function GameRoomPage() {
             </div>
           </div>
         )}
+
+        {/* Meme Overlay */}
+        <MemeOverlay
+          meme={currentMeme}
+          onClose={() => setCurrentMeme(null)}
+          autoCloseDelay={5000}
+        />
       </div>
 
       {/* Issues Sidebar */}
