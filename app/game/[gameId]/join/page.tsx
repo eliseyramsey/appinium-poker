@@ -229,30 +229,32 @@ export default function JoinGamePage() {
               <label className="block text-sm font-medium text-[var(--text-primary)] mb-3">
                 Choose Avatar ({availableAvatars.length} available)
               </label>
-              <div className="grid grid-cols-4 gap-3">
-                {availableAvatars.map((avatar, index) => (
-                  <button
-                    key={avatar.src}
-                    type="button"
-                    onClick={() => { setSelectedAvatar(avatar); setError(null); }}
-                    className={`
-                      w-full aspect-square rounded-xl overflow-hidden
-                      border-2 transition-all duration-200
-                      ${
-                        selectedAvatar?.src === avatar.src
-                          ? "border-[var(--primary)] ring-2 ring-[var(--primary)] ring-offset-2"
-                          : "border-[var(--border)] hover:border-[var(--border-hover)]"
-                      }
-                    `}
-                    style={{
-                      backgroundImage: `url(${avatar.src})`,
-                      backgroundSize: `${avatar.zoom}%`,
-                      backgroundPosition: `${avatar.x}% ${avatar.y}%`,
-                      backgroundRepeat: "no-repeat",
-                    }}
-                    aria-label={`Avatar ${index + 1}`}
-                  />
-                ))}
+              <div className="max-h-48 overflow-y-auto border border-[var(--border)] rounded-xl p-3">
+                <div className="grid grid-cols-4 gap-3">
+                  {availableAvatars.map((avatar, index) => (
+                    <button
+                      key={avatar.src}
+                      type="button"
+                      onClick={() => { setSelectedAvatar(avatar); setError(null); }}
+                      className={`
+                        w-full aspect-square rounded-xl overflow-hidden
+                        border-2 transition-all duration-200
+                        ${
+                          selectedAvatar?.src === avatar.src
+                            ? "border-[var(--primary)] ring-2 ring-[var(--primary)] ring-offset-2"
+                            : "border-[var(--border)] hover:border-[var(--border-hover)]"
+                        }
+                      `}
+                      style={{
+                        backgroundImage: `url(${avatar.src})`,
+                        backgroundSize: `${avatar.zoom}%`,
+                        backgroundPosition: `${avatar.x}% ${avatar.y}%`,
+                        backgroundRepeat: "no-repeat",
+                      }}
+                      aria-label={`Avatar ${index + 1}`}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
 
