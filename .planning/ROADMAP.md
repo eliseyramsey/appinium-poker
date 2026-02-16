@@ -1,16 +1,17 @@
 # Roadmap: Appinium Poker
 
 **Created:** 2026-02-16
-**Phases:** 3
+**Phases:** 4
 **Core Value:** Команда может быстро и весело оценить задачи в Story Points
 
 ## Overview
 
 | # | Phase | Goal | Requirements | Status |
 |---|-------|------|--------------|--------|
-| 1 | Admin Player Management | Admin может управлять игроками | ADMIN-01, ADMIN-02, ADMIN-03 | Pending |
-| 2 | Meme System | Мемы показываются после reveal | MEME-01, MEME-02, MEME-03, MEME-04 | Pending |
-| 3 | Deploy | Приложение доступно публично | DEPLOY-01, DEPLOY-02, DEPLOY-03 | Pending |
+| 1 | Admin Player Management | Admin может управлять игроками | ADMIN-01, ADMIN-02, ADMIN-03 | ✓ Complete |
+| 2 | Meme System | Мемы показываются после reveal | MEME-01, MEME-02, MEME-03, MEME-04 | ✓ Complete |
+| 3 | Deploy | Приложение доступно публично | DEPLOY-01, DEPLOY-02, DEPLOY-03 | ✓ Complete |
+| 4 | Bug Fixes | Исправить security и quality баги | BUGS-01 to BUGS-14 | Pending |
 
 ---
 
@@ -71,6 +72,43 @@
 4. Создание игры и мультиплеер работают
 
 **Dependencies:** Phase 1, Phase 2 (deploy финального кода)
+
+---
+
+## Phase 4: Bug Fixes
+
+**Goal:** Исправить все security и quality баги из code review
+
+**Requirements:**
+
+*Critical (Security):*
+- BUGS-01: Fix race condition in vote upsert (TOCTOU vulnerability)
+- BUGS-02: Add admin auth to DELETE /api/votes
+- BUGS-03: Add admin auth to POST /api/issues
+- BUGS-04: Add game ownership check to issues CRUD
+
+*Warning (Quality):*
+- BUGS-05: Remove unsafe supabase export
+- BUGS-06: Add error feedback to user actions
+- BUGS-07: Validate vote values in API
+- BUGS-08: Remove duplicate getMemeCategory
+- BUGS-09: Refactor confidence DELETE to use query params
+- BUGS-10: Split game room page into components
+
+*Suggestion (Tech Debt):*
+- BUGS-11: Generate Supabase types to remove `as never`
+- BUGS-12: Centralize hardcoded strings
+- BUGS-13: Document useEffect deps limitation
+- BUGS-14: Fix join page error state bug
+
+**Success Criteria:**
+1. All 4 critical security issues fixed
+2. API endpoints validate admin permissions
+3. No cross-game data manipulation possible
+4. Error messages shown to users on failures
+5. Game room page refactored into smaller components
+
+**Dependencies:** Phase 3 (fix on deployed codebase)
 
 ---
 
