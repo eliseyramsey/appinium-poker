@@ -37,11 +37,11 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - MemeOverlay component with 5s countdown
 - Integrated into game room (shows after reveal)
 - Graceful fallback when images not found
-- TODO: Add actual meme images to public/memes/
+- ✓ 21 meme images added to public/memes/
 
 ## Pending Tasks
 
-1. **Add meme images**: Download ~50 Russian memes and add to public/memes/
+1. ~~**Add meme images**~~: ✓ Done (21 images)
 2. **Deploy to Vercel**: Follow instructions in .planning/phases/3/DEPLOY.md
 3. **Update NEXT_PUBLIC_APP_URL**: After deploy, update to actual Vercel URL
 
@@ -50,6 +50,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 | # | Description | Date | Commit | Status | Directory |
 |---|-------------|------|--------|--------|-----------|
 | 1 | UI improvements: meme slide-in, avatar picker compact, kicked rejoin | 2026-02-16 | 96d0986 | Verified | [1-ui-improvements-meme-slide-in-avatar-pic](./quick/1-ui-improvements-meme-slide-in-avatar-pic/) |
+| 2 | Integrate 21 meme images into memeData.ts | 2026-02-16 | e0b783a | Done | [2-integrate-22-meme-images](./quick/2-integrate-22-meme-images-into-memedata-t/) |
 
 ## Session Log
 
@@ -60,4 +61,4 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - Created deploy instructions for Phase 3
 
 ---
-*Last updated: 2026-02-16 - Completed quick task 1: UI improvements*
+*Last updated: 2026-02-16 - Completed quick task 2: Integrate meme images*
