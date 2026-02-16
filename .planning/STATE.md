@@ -45,6 +45,32 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 2. **Deploy to Vercel**: Follow instructions in .planning/phases/3/DEPLOY.md
 3. **Update NEXT_PUBLIC_APP_URL**: After deploy, update to actual Vercel URL
 
+## Accumulated Context
+
+### Pending Todos (14)
+
+**Critical (4):**
+- `fix-race-condition-in-vote-upsert` — TOCTOU vulnerability in vote submission
+- `add-admin-auth-to-delete-votes` — Anyone can clear votes
+- `add-admin-auth-to-post-issues` — Anyone can create issues
+- `add-game-ownership-check-to-issues-crud` — Cross-game manipulation
+
+**Warning (6):**
+- `remove-unsafe-supabase-export` — Module-level export race condition
+- `add-error-feedback-to-user-actions` — Silent error swallowing
+- `validate-vote-values-in-api` — No vote value validation
+- `remove-duplicate-getmemecategory` — Two implementations
+- `refactor-confidence-delete-to-use-query-params` — Non-standard DELETE body
+- `split-game-room-page-into-components` — 1106 lines, too large
+
+**Suggestion (4):**
+- `generate-supabase-types-to-remove-as-never` — Type assertions
+- `centralize-hardcoded-strings` — "Planning Session" repeated
+- `document-useeffect-deps-limitation` — Missing deps comment
+- `fix-join-page-error-state-bug` — Error not shown to user
+
+See: `.planning/todos/pending/`
+
 ## Quick Tasks Completed
 
 | # | Description | Date | Commit | Status | Directory |
