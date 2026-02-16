@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Команда может быстро и весело оценить задачи в Story Points
-**Current focus:** Phase 3 — Deploy
+**Current focus:** Milestone 1 Complete — Todos & Next Milestone
 
 ## Progress
 
@@ -13,15 +13,16 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 |-------|--------|----------|
 | 1. Admin Player Management | ✓ Complete | 100% |
 | 2. Meme System | ✓ Complete | 100% |
-| 3. Deploy | ○ Pending | User action required |
+| 3. Deploy | ✓ Complete | 100% |
 
-**Overall:** 2/3 phases complete
+**Overall:** 3/3 phases complete ✓
 
 ## Current Phase
 
-**Phase 3: Deploy**
-- Status: Waiting for user to run `npx vercel login`
-- Instructions: `.planning/phases/3/DEPLOY.md`
+**Milestone 1 Complete!**
+- All 3 phases delivered
+- App live at: https://appinium-poker.vercel.app/
+- Next: Address pending todos or plan new milestone
 
 ## Completed Work
 
@@ -39,11 +40,16 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - Graceful fallback when images not found
 - ✓ 21 meme images added to public/memes/
 
+### Phase 3: Deploy
+- Deployed to Vercel
+- Environment variables configured
+- App live at https://appinium-poker.vercel.app/
+
 ## Pending Tasks
 
 1. ~~**Add meme images**~~: ✓ Done (21 images)
-2. **Deploy to Vercel**: Follow instructions in .planning/phases/3/DEPLOY.md
-3. **Update NEXT_PUBLIC_APP_URL**: After deploy, update to actual Vercel URL
+2. ~~**Deploy to Vercel**~~: ✓ Done
+3. ~~**Update NEXT_PUBLIC_APP_URL**~~: ✓ Done
 
 ## Accumulated Context
 
@@ -87,4 +93,4 @@ See: `.planning/todos/pending/`
 - Created deploy instructions for Phase 3
 
 ---
-*Last updated: 2026-02-16 - Completed quick task 2: Integrate meme images*
+*Last updated: 2026-02-16 - Milestone 1 complete, all 3 phases delivered*
