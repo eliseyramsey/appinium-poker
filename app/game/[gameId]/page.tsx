@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { IssuesSidebar } from "@/components/issues/IssuesSidebar";
 import { ContextMenu } from "@/components/ui/ContextMenu";
@@ -17,7 +17,6 @@ import { usePlayerStore } from "@/lib/store/playerStore";
 import { useGameStore } from "@/lib/store/gameStore";
 import { useGameRealtime } from "@/lib/hooks/useGameRealtime";
 import { calculateAverage } from "@/lib/utils/calculations";
-import GameNotFound from "./not-found";
 
 function GameRoomContent() {
   const params = useParams();
@@ -36,7 +35,6 @@ function GameRoomContent() {
   const players = useGameStore((state) => state.players);
   const votes = useGameStore((state) => state.votes);
   const isRevealed = useGameStore((state) => state.isRevealed);
-  const isGameLoaded = useGameStore((state) => state.isGameLoaded);
   const currentIssue = useGameStore((state) => state.currentIssue);
   const isAdmin = useGameStore((state) => state.isAdmin);
   const confidenceVotes = useGameStore((state) => state.confidenceVotes);
@@ -449,6 +447,58 @@ function GameRoomContent() {
     }
   };
 
+  // Keyboard shortcuts for game room
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in input or if modal is open
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        showNameModal ||
+        showAvatarModal ||
+        showConfidence ||
+        (isConfidenceVoting && !hideConfidence)
+      ) {
+        return;
+      }
+
+      // Escape - deselect card
+      if (e.key === "Escape" && myVote) {
+        handleCardSelect(myVote); // Toggle off
+        return;
+      }
+
+      // Enter - reveal (admin only, when votes exist)
+      if (e.key === "Enter" && isPlayerAdmin && hasVotes && !isRevealed) {
+        handleReveal();
+        return;
+      }
+
+      // Number keys 1-9, 0 for voting
+      // Map: 1->0, 2->1, 3->2, 4->3, 5->5, 6->8, 7->13, 8->21, 9->?, 0->coffee
+      const keyMap: Record<string, string> = {
+        "1": "0",
+        "2": "1",
+        "3": "2",
+        "4": "3",
+        "5": "5",
+        "6": "8",
+        "7": "13",
+        "8": "21",
+        "9": "?",
+        "0": "coffee",
+      };
+
+      const cardValue = keyMap[e.key];
+      if (cardValue && !isRevealed && currentPlayer && game?.current_issue_id) {
+        handleCardSelect(cardValue);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  });
+
   // Start confidence voting (admin only)
   const handleStartConfidenceVote = async () => {
     if (!isPlayerAdmin) return;
@@ -516,11 +566,6 @@ function GameRoomContent() {
 
   // Check if at least one player has voted
   const hasVotes = votes.length > 0 || !!myVote;
-
-  // Show 404 if game loaded but not found
-  if (isGameLoaded && !game) {
-    return <GameNotFound />;
-  }
 
   if (!currentPlayer) {
     return null;
