@@ -45,6 +45,12 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 2. **Deploy to Vercel**: Follow instructions in .planning/phases/3/DEPLOY.md
 3. **Update NEXT_PUBLIC_APP_URL**: After deploy, update to actual Vercel URL
 
+## Quick Tasks Completed
+
+| # | Description | Date | Commit | Status | Directory |
+|---|-------------|------|--------|--------|-----------|
+| 1 | UI improvements: meme slide-in, avatar picker compact, kicked rejoin | 2026-02-16 | 96d0986 | Verified | [1-ui-improvements-meme-slide-in-avatar-pic](./quick/1-ui-improvements-meme-slide-in-avatar-pic/) |
+
 ## Session Log
 
 ### 2026-02-16: Milestone Completion
@@ -54,4 +60,4 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 - Created deploy instructions for Phase 3
 
 ---
-*Last updated: 2026-02-16*
+*Last updated: 2026-02-16 - Completed quick task 1: UI improvements*
