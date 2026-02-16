@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { IssuesSidebar } from "@/components/issues/IssuesSidebar";
-import { Button } from "@/components/ui/Button";
 import { ContextMenu } from "@/components/ui/ContextMenu";
+import { ToastProvider, useToast } from "@/components/ui/Toast";
 import { MemeOverlay } from "@/components/memes/MemeOverlay";
 import { selectMeme, type Meme } from "@/components/memes/memeData";
 import { CardSelector } from "@/components/game/CardSelector";
@@ -18,10 +18,11 @@ import { useGameStore } from "@/lib/store/gameStore";
 import { useGameRealtime } from "@/lib/hooks/useGameRealtime";
 import { calculateAverage } from "@/lib/utils/calculations";
 
-export default function GameRoomPage() {
+function GameRoomContent() {
   const params = useParams();
   const router = useRouter();
   const gameId = params.gameId as string;
+  const { showToast } = useToast();
 
   const currentPlayer = usePlayerStore((state) => state.currentPlayer);
   const setCurrentPlayer = usePlayerStore((state) => state.setCurrentPlayer);
@@ -129,7 +130,7 @@ export default function GameRoomPage() {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [countdown, gameId]);
+  }, [countdown, gameId, isPlayerAdmin, currentPlayer?.id]);
 
   // Clear isRevealing when actually revealed
   useEffect(() => {
@@ -204,9 +205,11 @@ export default function GameRoomPage() {
         setCurrentPlayer({ ...currentPlayer, name: updated.name });
         setShowNameModal(false);
         setNewName("");
+      } else {
+        showToast("Failed to update name. Please try again.");
       }
-    } catch (error) {
-      // Silent error
+    } catch {
+      showToast("Failed to update name. Please try again.");
     } finally {
       setIsUpdatingProfile(false);
     }
@@ -226,9 +229,11 @@ export default function GameRoomPage() {
         const updated = await res.json();
         setCurrentPlayer({ ...currentPlayer, avatar: updated.avatar });
         setShowAvatarModal(false);
+      } else {
+        showToast("Failed to update avatar. Please try again.");
       }
-    } catch (error) {
-      // Silent error
+    } catch {
+      showToast("Failed to update avatar. Please try again.");
     } finally {
       setIsUpdatingProfile(false);
     }
@@ -269,9 +274,11 @@ export default function GameRoomPage() {
         // Update store directly (realtime doesn't reliably send old.id on delete)
         useGameStore.getState().removePlayer(contextMenu.playerId);
         setContextMenu(null);
+      } else {
+        showToast("Failed to kick player.");
       }
-    } catch (error) {
-      // Silent error
+    } catch {
+      showToast("Failed to kick player.");
     } finally {
       setIsContextMenuLoading(false);
     }
@@ -292,9 +299,11 @@ export default function GameRoomPage() {
       });
       if (res.ok) {
         setContextMenu(null);
+      } else {
+        showToast("Failed to update player status.");
       }
-    } catch (error) {
-      // Silent error
+    } catch {
+      showToast("Failed to update player status.");
     } finally {
       setIsContextMenuLoading(false);
     }
@@ -315,9 +324,11 @@ export default function GameRoomPage() {
       });
       if (res.ok) {
         setContextMenu(null);
+      } else {
+        showToast("Failed to transfer admin.");
       }
-    } catch (error) {
-      // Silent error
+    } catch {
+      showToast("Failed to transfer admin.");
     } finally {
       setIsContextMenuLoading(false);
     }
@@ -337,13 +348,16 @@ export default function GameRoomPage() {
     if (!isPlayerAdmin) return;
     setIsLoading(true);
     try {
-      await fetch(`/api/games/${gameId}`, {
+      const res = await fetch(`/api/games/${gameId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "revealed", playerId: currentPlayer?.id }),
       });
-    } catch (error) {
-      // Error handled by realtime
+      if (!res.ok) {
+        showToast("Failed to reveal votes.");
+      }
+    } catch {
+      showToast("Failed to reveal votes.");
     } finally {
       setIsLoading(false);
     }
@@ -361,19 +375,24 @@ export default function GameRoomPage() {
       }
 
       // Reset game status
-      await fetch(`/api/games/${gameId}`, {
+      const res = await fetch(`/api/games/${gameId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "voting", playerId: currentPlayer?.id }),
       });
+
+      if (!res.ok) {
+        showToast("Failed to start new round.");
+        return;
+      }
 
       // Clear local vote
       setMyVote(null);
 
       // Clear votes in store
       useGameStore.getState().clearVotes();
-    } catch (error) {
-      // Error handled by realtime
+    } catch {
+      showToast("Failed to start new round.");
     } finally {
       setIsLoading(false);
     }
@@ -382,12 +401,13 @@ export default function GameRoomPage() {
   const handleCardSelect = async (value: string) => {
     if (isRevealed || !currentPlayer || !game?.current_issue_id) return;
 
+    const previousVote = myVote;
     const newVote = myVote === value ? null : value;
     setMyVote(newVote);
 
     if (newVote) {
       try {
-        await fetch("/api/votes", {
+        const res = await fetch("/api/votes", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -396,9 +416,14 @@ export default function GameRoomPage() {
             value: newVote,
           }),
         });
-      } catch (error) {
+        if (!res.ok) {
+          setMyVote(previousVote);
+          showToast("Failed to submit vote.");
+        }
+      } catch {
         // Revert on error
-        setMyVote(myVote);
+        setMyVote(previousVote);
+        showToast("Failed to submit vote.");
       }
     }
   };
@@ -413,16 +438,21 @@ export default function GameRoomPage() {
       });
 
       // Set status to voting
-      await fetch(`/api/games/${gameId}`, {
+      const res = await fetch(`/api/games/${gameId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ confidenceStatus: "voting", playerId: currentPlayer?.id }),
       });
 
+      if (!res.ok) {
+        showToast("Failed to start confidence vote.");
+        return;
+      }
+
       setHideConfidence(false);
       setShowConfidence(true);
-    } catch (error) {
-      // Error handled silently
+    } catch {
+      showToast("Failed to start confidence vote.");
     }
   };
 
@@ -430,13 +460,16 @@ export default function GameRoomPage() {
   const handleConfidenceSubmit = async (value: number) => {
     if (!currentPlayer) return;
     try {
-      await fetch("/api/confidence", {
+      const res = await fetch("/api/confidence", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ gameId, playerId: currentPlayer.id, value }),
       });
-    } catch (error) {
-      // Error handled silently
+      if (!res.ok) {
+        showToast("Failed to submit confidence vote.");
+      }
+    } catch {
+      showToast("Failed to submit confidence vote.");
     }
   };
 
@@ -444,13 +477,16 @@ export default function GameRoomPage() {
   const handleRevealConfidence = async () => {
     if (!isPlayerAdmin) return;
     try {
-      await fetch(`/api/games/${gameId}`, {
+      const res = await fetch(`/api/games/${gameId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ confidenceStatus: "revealed", playerId: currentPlayer?.id }),
       });
-    } catch (error) {
-      // Error handled silently
+      if (!res.ok) {
+        showToast("Failed to reveal confidence votes.");
+      }
+    } catch {
+      showToast("Failed to reveal confidence votes.");
     }
   };
 
@@ -590,5 +626,13 @@ export default function GameRoomPage() {
         onConfidenceVote={handleStartConfidenceVote}
       />
     </div>
+  );
+}
+
+export default function GameRoomPage() {
+  return (
+    <ToastProvider>
+      <GameRoomContent />
+    </ToastProvider>
   );
 }
