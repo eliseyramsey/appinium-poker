@@ -11,7 +11,7 @@
 | 1 | Admin Player Management | Admin может управлять игроками | ADMIN-01, ADMIN-02, ADMIN-03 | Complete |
 | 2 | Meme System | Мемы показываются после reveal | MEME-01, MEME-02, MEME-03, MEME-04 | Complete |
 | 3 | Deploy | Приложение доступно публично | DEPLOY-01, DEPLOY-02, DEPLOY-03 | Complete |
-| 4 | Bug Fixes | Исправить security и quality баги | BUGS-01 to BUGS-14 | In Progress |
+| 4 | Bug Fixes | Исправить security и quality баги | BUGS-01 to BUGS-14 | Complete |
 
 ---
 
@@ -104,10 +104,10 @@
 **Plans:** 4 plans
 
 Plans:
-- [ ] 4-01-PLAN.md — Critical API Security (BUGS-01, 02, 03, 04, 07)
-- [ ] 4-02-PLAN.md — Code Quality Cleanup (BUGS-05, 08, 09, 12, 13)
-- [ ] 4-03-PLAN.md — Component Refactoring (BUGS-10)
-- [ ] 4-04-PLAN.md — Error Feedback + Types (BUGS-06, 14, 11)
+- [x] 4-01-PLAN.md — Critical API Security (BUGS-01, 02, 03, 04, 07) ✓
+- [x] 4-02-PLAN.md — Code Quality Cleanup (BUGS-05, 08, 09, 12, 13) ✓
+- [x] 4-03-PLAN.md — Component Refactoring (BUGS-10) ✓
+- [x] 4-04-PLAN.md — Error Feedback + Types (BUGS-06, 14, 11) ✓
 
 **Success Criteria:**
 1. All 4 critical security issues fixed
