@@ -9,11 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { Toggle } from "@/components/ui/Toggle";
 import { TEAM_AVATARS, TeamAvatar } from "@/lib/constants";
 import { usePlayerStore } from "@/lib/store/playerStore";
-
-interface Player {
-  id: string;
-  avatar: string | null;
-}
+import type { Player } from "@/lib/supabase/types";
 
 export default function JoinGamePage() {
   const router = useRouter();
@@ -26,10 +22,53 @@ export default function JoinGamePage() {
   const [playerName, setPlayerName] = useState("");
   const [isSpectator, setIsSpectator] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [existingPlayers, setExistingPlayers] = useState<Player[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const setCurrentPlayer = usePlayerStore((state) => state.setCurrentPlayer);
+  const saveSession = usePlayerStore((state) => state.saveSession);
+  const getSession = usePlayerStore((state) => state.getSession);
+  const clearSession = usePlayerStore((state) => state.clearSession);
+
+  // Check for existing session and redirect if player exists
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      const savedPlayerId = getSession(gameId);
+      if (!savedPlayerId) {
+        setIsCheckingSession(false);
+        return;
+      }
+
+      try {
+        // Fetch game data to check if player still exists
+        const res = await fetch(`/api/games/${gameId}`);
+        if (res.ok) {
+          const data = await res.json();
+          const existingPlayer = (data.players as Player[])?.find(
+            (p) => p.id === savedPlayerId
+          );
+
+          if (existingPlayer) {
+            // Player exists — restore session and go to game room
+            setCurrentPlayer(existingPlayer);
+            router.replace(`/game/${gameId}`);
+            return;
+          }
+        }
+
+        // Player not found — clear stale session
+        clearSession(gameId);
+      } catch {
+        // Error — clear session and show join form
+        clearSession(gameId);
+      }
+
+      setIsCheckingSession(false);
+    };
+
+    checkExistingSession();
+  }, [gameId, getSession, clearSession, setCurrentPlayer, router]);
 
   // Fetch existing players to filter taken avatars
   const fetchPlayers = useCallback(async () => {
@@ -45,8 +84,10 @@ export default function JoinGamePage() {
   }, [gameId]);
 
   useEffect(() => {
-    fetchPlayers();
-  }, [fetchPlayers]);
+    if (!isCheckingSession) {
+      fetchPlayers();
+    }
+  }, [fetchPlayers, isCheckingSession]);
 
   // Filter out taken avatars
   const availableAvatars = useMemo(() => {
@@ -99,8 +140,9 @@ export default function JoinGamePage() {
 
       const player = await response.json();
 
-      // Store player in local state
+      // Store player in local state and save session
       setCurrentPlayer(player);
+      saveSession(gameId, player.id);
 
       // If host, create a default issue and set up game
       if (isHost) {
@@ -131,6 +173,18 @@ export default function JoinGamePage() {
       setIsLoading(false);
     }
   };
+
+  // Show loading while checking existing session
+  if (isCheckingSession) {
+    return (
+      <main className="min-h-screen bg-[var(--bg-surface)] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-[var(--text-secondary)]">Checking session...</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[var(--bg-surface)] py-8 px-4">
