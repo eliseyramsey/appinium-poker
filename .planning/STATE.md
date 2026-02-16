@@ -54,13 +54,14 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 ## Accumulated Context
 
-### Pending Todos (14)
+### Pending Todos (4)
 
-**Critical (4):**
-- `fix-race-condition-in-vote-upsert` — TOCTOU vulnerability in vote submission
-- `add-admin-auth-to-delete-votes` — Anyone can clear votes
-- `add-admin-auth-to-post-issues` — Anyone can create issues
-- `add-game-ownership-check-to-issues-crud` — Cross-game manipulation
+**Critical (0):** All fixed in Plan 01
+- ~~`fix-race-condition-in-vote-upsert`~~ — Fixed (2f54cc6)
+- ~~`add-admin-auth-to-delete-votes`~~ — Fixed (a155376)
+- ~~`add-admin-auth-to-post-issues`~~ — Fixed (113e6d2)
+- ~~`add-game-ownership-check-to-issues-crud`~~ — Fixed (113e6d2)
+- ~~`validate-vote-values-in-api`~~ — Fixed (2f54cc6)
 
 **Warning (2 remaining):**
 - `add-error-feedback-to-user-actions` — Silent error swallowing
