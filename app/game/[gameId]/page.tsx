@@ -67,6 +67,7 @@ function GameRoomContent() {
   } | null>(null);
   const [isContextMenuLoading, setIsContextMenuLoading] = useState(false);
   const [wasKicked, setWasKicked] = useState(false);
+  const [isVoting, setIsVoting] = useState(false);
 
   // Meme state
   const [currentMeme, setCurrentMeme] = useState<Meme | null>(null);
@@ -414,13 +415,14 @@ function GameRoomContent() {
   };
 
   const handleCardSelect = async (value: string) => {
-    if (isRevealed || !currentPlayer || !game?.current_issue_id) return;
+    if (isRevealed || !currentPlayer || !game?.current_issue_id || isVoting) return;
 
     const previousVote = myVote;
     const newVote = myVote === value ? null : value;
     setMyVote(newVote);
 
     if (newVote) {
+      setIsVoting(true);
       try {
         const res = await fetch("/api/votes", {
           method: "POST",
@@ -439,6 +441,8 @@ function GameRoomContent() {
         // Revert on error
         setMyVote(previousVote);
         showToast("Failed to submit vote.");
+      } finally {
+        setIsVoting(false);
       }
     }
   };
@@ -564,6 +568,7 @@ function GameRoomContent() {
         selectedValue={myVote}
         onSelect={handleCardSelect}
         disabled={isRevealed}
+        isSubmitting={isVoting}
       />
 
         {/* Confidence Vote Modal - shows for all when voting is active */}
