@@ -10,7 +10,10 @@ import { Avatar } from "@/components/ui/Avatar";
 import { ContextMenu } from "@/components/ui/ContextMenu";
 import { MemeOverlay } from "@/components/memes/MemeOverlay";
 import { selectMeme, type Meme } from "@/components/memes/memeData";
-import { VOTING_CARDS, TEAM_AVATARS, DEFAULT_GAME_NAME } from "@/lib/constants";
+import { PlayerSeat } from "@/components/game/PlayerSeat";
+import { CardSelector } from "@/components/game/CardSelector";
+import { ConfidenceVoteModal } from "@/components/confidence/ConfidenceVoteModal";
+import { TEAM_AVATARS, DEFAULT_GAME_NAME } from "@/lib/constants";
 import { usePlayerStore } from "@/lib/store/playerStore";
 import { useGameStore } from "@/lib/store/gameStore";
 import { useGameRealtime } from "@/lib/hooks/useGameRealtime";
@@ -696,34 +699,11 @@ export default function GameRoomPage() {
       </main>
 
       {/* Card selector */}
-      <div className="bg-white border-t border-[var(--border)] p-4">
-        <div className="max-w-4xl mx-auto">
-          <p className="text-center text-sm text-[var(--text-secondary)] mb-3">
-            Choose your card
-          </p>
-          <div className="flex justify-center gap-2 flex-wrap">
-            {VOTING_CARDS.map((card) => (
-              <button
-                key={card.value}
-                onClick={() => handleCardSelect(card.value)}
-                disabled={isRevealed}
-                className={`
-                  w-14 h-20 rounded-lg border-2 font-mono font-bold text-lg
-                  transition-all duration-200
-                  ${
-                    myVote === card.value
-                      ? "bg-[var(--primary)] text-white border-[var(--primary)] -translate-y-2 shadow-lg"
-                      : "bg-white text-[var(--text-primary)] border-[var(--border)] hover:border-[var(--primary)] hover:-translate-y-1"
-                  }
-                  disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0
-                `}
-              >
-                {card.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+      <CardSelector
+        selectedValue={myVote}
+        onSelect={handleCardSelect}
+        disabled={isRevealed}
+      />
 
         {/* Confidence Vote Modal - shows for all when voting is active */}
         {(showConfidence || (isConfidenceVoting && !hideConfidence)) && (
@@ -886,218 +866,6 @@ export default function GameRoomPage() {
         onClose={() => setSidebarOpen(false)}
         onConfidenceVote={handleStartConfidenceVote}
       />
-    </div>
-  );
-}
-
-// Confidence emojis mapping (Fist of Five)
-const CONFIDENCE_EMOJIS: Record<number, string> = {
-  1: "☝️",
-  2: "✌️",
-  3: "🤟",
-  4: "🖖",
-  5: "🖐️",
-};
-
-// Player seat component
-function PlayerSeat({
-  player,
-  vote,
-  isRevealed,
-  isCurrentPlayer,
-  confidenceVote,
-  showConfidence,
-  isCreator,
-  position,
-  isSpectator,
-  onContextMenu,
-}: {
-  player: { id: string; name: string; avatar: string | null };
-  vote: string | null;
-  isRevealed: boolean;
-  isCurrentPlayer: boolean;
-  confidenceVote?: number | null;
-  showConfidence?: boolean;
-  isCreator?: boolean;
-  position: "top" | "bottom";
-  isSpectator?: boolean;
-  onContextMenu?: (e: React.MouseEvent) => void;
-}) {
-  const hasVoted = vote !== null;
-  const hasConfidenceVote = confidenceVote !== null && confidenceVote !== undefined;
-
-  // Convert vote value to display label (e.g., "coffee" -> "☕")
-  const voteLabel = vote ? (VOTING_CARDS.find(c => c.value === vote)?.label ?? vote) : null;
-
-  const card = (
-    <div
-      className={`
-        w-14 h-20 rounded-lg flex items-center justify-center font-mono font-bold text-lg
-        transition-all duration-300 shadow-md
-        ${showConfidence
-          ? hasConfidenceVote
-            ? "bg-[var(--accent)]/20 text-2xl"
-            : "bg-[var(--border)] text-transparent"
-          : hasVoted
-            ? "bg-[var(--primary)] text-white"
-            : "bg-[var(--border)] text-transparent"
-        }
-        ${isCurrentPlayer ? "ring-2 ring-[var(--accent)]" : ""}
-      `}
-    >
-      {showConfidence
-        ? hasConfidenceVote
-          ? CONFIDENCE_EMOJIS[confidenceVote!]
-          : "?"
-        : isRevealed && hasVoted
-          ? voteLabel
-          : hasVoted
-            ? "✓"
-            : "?"
-      }
-    </div>
-  );
-
-  const avatar = (
-    <div
-      onContextMenu={onContextMenu}
-      className={`flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm cursor-default select-none ${isCurrentPlayer ? "bg-[var(--primary-light)]" : "bg-white"} ${onContextMenu ? "hover:ring-2 hover:ring-[var(--primary)]/30" : ""}`}
-    >
-      {isCreator && (
-        <span className="text-sm" title="Game Admin">👑</span>
-      )}
-      <Avatar src={player.avatar} size={40} />
-      <span className={`text-sm font-medium ${isSpectator ? "text-[var(--text-secondary)] italic" : "text-[var(--text-primary)]"}`}>
-        {player.name}
-        {isSpectator && <span className="ml-1 text-xs">(spectator)</span>}
-      </span>
-    </div>
-  );
-
-  // Top: avatar above card, Bottom: card above avatar
-  return (
-    <div className="flex flex-col items-center gap-2">
-      {position === "top" ? avatar : card}
-      {position === "top" ? card : avatar}
-    </div>
-  );
-}
-
-// Confidence Vote Modal
-function ConfidenceVoteModal({
-  isOpen,
-  isRevealed,
-  isAdmin,
-  players,
-  confidenceVotes,
-  currentPlayerId,
-  onSubmit,
-  onReveal,
-  onClose,
-}: {
-  isOpen: boolean;
-  isRevealed: boolean;
-  isAdmin: boolean;
-  players: { id: string; name: string; is_spectator: boolean }[];
-  confidenceVotes: { player_id: string; value: number }[];
-  currentPlayerId: string | null;
-  onSubmit: (value: number) => void;
-  onReveal: () => void;
-  onClose: () => void;
-}) {
-  const [selectedValue, setSelectedValue] = useState<number | null>(null);
-  const [hasSubmitted, setHasSubmitted] = useState(false);
-
-  // Check if current player already voted
-  const myVote = confidenceVotes.find((v) => v.player_id === currentPlayerId);
-  const allVoted = players.filter((p) => !p.is_spectator).every((p) =>
-    confidenceVotes.some((v) => v.player_id === p.id)
-  );
-
-  // Calculate average
-  const average = confidenceVotes.length > 0
-    ? (confidenceVotes.reduce((sum, v) => sum + v.value, 0) / confidenceVotes.length).toFixed(1)
-    : null;
-
-  const handleSubmit = async (value: number) => {
-    setSelectedValue(value);
-    setHasSubmitted(true);
-    await onSubmit(value);
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl p-6 max-w-md w-full">
-        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">
-          ✊ Confidence Vote
-        </h2>
-        <p className="text-[var(--text-secondary)] mb-6">
-          {isRevealed
-            ? "Results are in!"
-            : "How confident are you in this sprint? You can change your vote anytime."
-          }
-        </p>
-
-        {/* Hand selection */}
-        <div className="flex justify-center gap-4 mb-6">
-          {[1, 2, 3, 4, 5].map((n) => {
-            const currentVote = selectedValue ?? myVote?.value;
-            const isSelected = currentVote === n;
-
-            return (
-              <button
-                key={n}
-                onClick={() => !isRevealed && handleSubmit(n)}
-                disabled={isRevealed}
-                className={`
-                  w-14 h-14 rounded-full text-2xl transition-all
-                  ${isSelected
-                    ? "bg-[var(--primary)] scale-110 ring-2 ring-[var(--primary)]"
-                    : "bg-[var(--bg-surface)] hover:bg-[var(--primary-light)]"
-                  }
-                  disabled:opacity-50 disabled:cursor-default
-                `}
-              >
-                {CONFIDENCE_EMOJIS[n]}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Vote status */}
-        <div className="text-center mb-4">
-          <span className="text-sm text-[var(--text-secondary)]">
-            {confidenceVotes.length} / {players.filter((p) => !p.is_spectator).length} voted
-          </span>
-        </div>
-
-        {/* Average (only when revealed) */}
-        {isRevealed && average && (
-          <div className="text-center mb-4 p-3 bg-[var(--primary-light)] rounded-lg">
-            <span className="text-sm text-[var(--text-secondary)]">Team Confidence: </span>
-            <span className="font-mono font-bold text-xl text-[var(--primary)]">{average}</span>
-            <span className="text-sm text-[var(--text-secondary)]"> / 5</span>
-          </div>
-        )}
-
-        {/* Actions */}
-        <div className="flex gap-2">
-          {isAdmin && confidenceVotes.length > 0 && !isRevealed && (
-            <Button onClick={onReveal} className="flex-1">
-              Reveal Results
-            </Button>
-          )}
-          <Button
-            variant="secondary"
-            className={isAdmin && confidenceVotes.length > 0 && !isRevealed ? "" : "w-full"}
-            onClick={onClose}
-          >
-            {isRevealed ? "Close" : "Hide"}
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }
