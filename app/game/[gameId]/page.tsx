@@ -2,19 +2,17 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Check, UserX } from "lucide-react";
 import { IssuesSidebar } from "@/components/issues/IssuesSidebar";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { Avatar } from "@/components/ui/Avatar";
 import { ContextMenu } from "@/components/ui/ContextMenu";
 import { MemeOverlay } from "@/components/memes/MemeOverlay";
 import { selectMeme, type Meme } from "@/components/memes/memeData";
-import { PlayerSeat } from "@/components/game/PlayerSeat";
 import { CardSelector } from "@/components/game/CardSelector";
+import { PokerTable } from "@/components/game/PokerTable";
+import { ProfileModals } from "@/components/game/ProfileModals";
+import { KickedModal } from "@/components/game/KickedModal";
 import { ConfidenceVoteModal } from "@/components/confidence/ConfidenceVoteModal";
 import { GameHeader } from "@/components/layout/GameHeader";
-import { TEAM_AVATARS } from "@/lib/constants";
 import { usePlayerStore } from "@/lib/store/playerStore";
 import { useGameStore } from "@/lib/store/gameStore";
 import { useGameRealtime } from "@/lib/hooks/useGameRealtime";
@@ -405,16 +403,6 @@ export default function GameRoomPage() {
     }
   };
 
-  // Get vote for a player
-  const getPlayerVote = (playerId: string) => {
-    return votes.find((v) => v.player_id === playerId)?.value ?? null;
-  };
-
-  // Get confidence vote for a player
-  const getPlayerConfidenceVote = (playerId: string) => {
-    return confidenceVotes.find((v) => v.player_id === playerId)?.value ?? null;
-  };
-
   // Start confidence voting (admin only)
   const handleStartConfidenceVote = async () => {
     if (!isPlayerAdmin) return;
@@ -470,7 +458,7 @@ export default function GameRoomPage() {
   const average = isRevealed ? calculateAverage(votes) : null;
 
   // Check if at least one player has voted
-  const hasVotes = votes.length > 0 || myVote;
+  const hasVotes = votes.length > 0 || !!myVote;
 
   if (!currentPlayer) {
     return null;
@@ -497,107 +485,28 @@ export default function GameRoomPage() {
         />
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col items-center justify-center p-8 bg-[var(--bg-surface)]">
-        {/* Poker Table */}
-        <div className="relative w-full max-w-3xl">
-          {/* Table */}
-          <div className="bg-[var(--primary-light)] border-4 border-[var(--primary)]/20 rounded-[100px] h-64 flex items-center justify-center">
-            {/* Center content */}
-            <div className="text-center">
-              {countdown !== null || isRevealing ? (
-                <div className="space-y-2">
-                  <div className="text-6xl font-bold text-[var(--primary)] animate-pulse">
-                    {countdown !== null ? countdown : "..."}
-                  </div>
-                  <div className="text-sm text-[var(--text-secondary)]">
-                    Revealing...
-                  </div>
-                </div>
-              ) : isRevealed ? (
-                <div className="space-y-4">
-                  <div className="text-4xl font-bold text-[var(--primary)]">
-                    {average !== null ? `Average: ${average}` : "No votes"}
-                  </div>
-                  {isPlayerAdmin ? (
-                    <Button onClick={handleNewRound} isLoading={isLoading}>
-                      Start New Round
-                    </Button>
-                  ) : (
-                    <p className="text-sm text-[var(--text-secondary)]">
-                      Waiting for admin to start new round...
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {isPlayerAdmin ? (
-                    <Button
-                      size="lg"
-                      onClick={() => game?.show_countdown ? setCountdown(3) : handleReveal()}
-                      disabled={!hasVotes}
-                      isLoading={isLoading}
-                    >
-                      Reveal Cards
-                    </Button>
-                  ) : (
-                    <p className="text-sm text-[var(--text-secondary)]">
-                      {hasVotes ? "Waiting for admin to reveal..." : "Cast your vote below"}
-                    </p>
-                  )}
-                  {allVoted && (
-                    <div className="text-sm text-[var(--success)] font-medium">
-                      ✓ All voted!
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Players around table */}
-          <div className="absolute -top-28 left-1/2 -translate-x-1/2 flex gap-8">
-            {players.slice(0, Math.ceil(players.length / 2)).map((player) => (
-              <PlayerSeat
-                key={player.id}
-                player={player}
-                vote={player.id === currentPlayer?.id ? myVote : getPlayerVote(player.id)}
-                isRevealed={isRevealed}
-                isCurrentPlayer={player.id === currentPlayer?.id}
-                confidenceVote={getPlayerConfidenceVote(player.id)}
-                showConfidence={isConfidenceRevealed}
-                isCreator={game?.creator_id === player.id}
-                position="top"
-                isSpectator={player.is_spectator}
-                onContextMenu={isPlayerAdmin && player.id !== currentPlayer?.id
-                  ? (e) => handlePlayerContextMenu(e, player)
-                  : undefined
-                }
-              />
-            ))}
-          </div>
-
-          <div className="absolute -bottom-28 left-1/2 -translate-x-1/2 flex gap-8">
-            {players.slice(Math.ceil(players.length / 2)).map((player) => (
-              <PlayerSeat
-                key={player.id}
-                player={player}
-                vote={player.id === currentPlayer?.id ? myVote : getPlayerVote(player.id)}
-                isRevealed={isRevealed}
-                isCurrentPlayer={player.id === currentPlayer?.id}
-                confidenceVote={getPlayerConfidenceVote(player.id)}
-                showConfidence={isConfidenceRevealed}
-                isCreator={game?.creator_id === player.id}
-                position="bottom"
-                isSpectator={player.is_spectator}
-                onContextMenu={isPlayerAdmin && player.id !== currentPlayer?.id
-                  ? (e) => handlePlayerContextMenu(e, player)
-                  : undefined
-                }
-              />
-            ))}
-          </div>
-        </div>
-      </main>
+      <PokerTable
+        countdown={countdown}
+        isRevealing={isRevealing}
+        isRevealed={isRevealed}
+        average={average}
+        hasVotes={hasVotes}
+        allVoted={allVoted}
+        isLoading={isLoading}
+        players={players}
+        currentPlayerId={currentPlayer?.id ?? null}
+        myVote={myVote}
+        votes={votes}
+        confidenceVotes={confidenceVotes}
+        isConfidenceRevealed={isConfidenceRevealed}
+        creatorId={game?.creator_id ?? null}
+        isPlayerAdmin={isPlayerAdmin}
+        showCountdown={game?.show_countdown ?? false}
+        onReveal={handleReveal}
+        onNewRound={handleNewRound}
+        onStartCountdown={() => setCountdown(3)}
+        onPlayerContextMenu={handlePlayerContextMenu}
+      />
 
       {/* Card selector */}
       <CardSelector
@@ -624,96 +533,23 @@ export default function GameRoomPage() {
           />
         )}
 
-        {/* Change Name Modal */}
-        {showNameModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
-              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">
-                Change Name
-              </h2>
-              <Input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Enter new name"
-                className="mb-4"
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleUpdateName();
-                }}
-              />
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleUpdateName}
-                  disabled={!newName.trim() || newName.trim() === currentPlayer.name}
-                  isLoading={isUpdatingProfile}
-                  className="flex-1"
-                >
-                  Save
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setShowNameModal(false);
-                    setNewName("");
-                  }}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Change Avatar Modal */}
-        {showAvatarModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto">
-              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">
-                Change Avatar
-              </h2>
-              <p className="text-sm text-[var(--text-secondary)] mb-4">
-                Select a new avatar ({TEAM_AVATARS.length - takenAvatars.length} available)
-              </p>
-              <div className="grid grid-cols-4 gap-4 mb-4">
-                {TEAM_AVATARS.map((avatar) => {
-                  const isTaken = takenAvatars.includes(avatar.src);
-                  const isSelected = currentPlayer.avatar === avatar.src;
-                  if (isTaken) return null;
-                  return (
-                    <button
-                      key={avatar.src}
-                      onClick={() => !isSelected && handleUpdateAvatar(avatar.src)}
-                      disabled={isUpdatingProfile}
-                      className={`
-                        relative w-[72px] h-[72px] rounded-full overflow-hidden
-                        transition-all duration-200
-                        ${isSelected
-                          ? "ring-3 ring-[var(--primary)] ring-offset-2"
-                          : "hover:ring-2 hover:ring-[var(--primary)] hover:ring-offset-2"
-                        }
-                        disabled:opacity-50
-                      `}
-                    >
-                      <Avatar src={avatar.src} size={72} />
-                      {isSelected && (
-                        <div className="absolute inset-0 bg-[var(--primary)]/20 flex items-center justify-center">
-                          <Check size={24} className="text-white drop-shadow-md" />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-              <Button
-                variant="secondary"
-                className="w-full"
-                onClick={() => setShowAvatarModal(false)}
-              >
-                Close
-              </Button>
-            </div>
-          </div>
-        )}
+        {/* Profile Modals */}
+        <ProfileModals
+          currentPlayer={currentPlayer}
+          takenAvatars={takenAvatars}
+          showNameModal={showNameModal}
+          newName={newName}
+          onNameChange={setNewName}
+          onSaveName={handleUpdateName}
+          onCloseNameModal={() => {
+            setShowNameModal(false);
+            setNewName("");
+          }}
+          showAvatarModal={showAvatarModal}
+          onSelectAvatar={handleUpdateAvatar}
+          onCloseAvatarModal={() => setShowAvatarModal(false)}
+          isUpdating={isUpdatingProfile}
+        />
 
         {/* Context Menu (admin player management) */}
         {contextMenu && (
@@ -730,27 +566,13 @@ export default function GameRoomPage() {
         )}
 
         {/* Kicked Modal */}
-        {wasKicked && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center">
-              <div className="w-16 h-16 bg-[var(--danger)]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <UserX size={32} className="text-[var(--danger)]" />
-              </div>
-              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">
-                Вас удалили из игры
-              </h2>
-              <p className="text-[var(--text-secondary)] mb-6">
-                Администратор удалил вас из этой сессии
-              </p>
-              <Button onClick={() => {
-                clearSession(gameId);
-                router.push(`/game/${gameId}/join`);
-              }}>
-                Присоединиться снова
-              </Button>
-            </div>
-          </div>
-        )}
+        <KickedModal
+          isOpen={wasKicked}
+          onRejoin={() => {
+            clearSession(gameId);
+            router.push(`/game/${gameId}/join`);
+          }}
+        />
 
         {/* Meme Overlay */}
         <MemeOverlay
