@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Copy, Check, PanelRightOpen, PanelRightClose, LogOut, User, ImageIcon, ChevronDown } from "lucide-react";
+import { Copy, Check, PanelRightOpen, PanelRightClose, LogOut, User, ImageIcon, ChevronDown, UserX } from "lucide-react";
 import { IssuesSidebar } from "@/components/issues/IssuesSidebar";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Avatar } from "@/components/ui/Avatar";
+import { ContextMenu } from "@/components/ui/ContextMenu";
 import { VOTING_CARDS, TEAM_AVATARS } from "@/lib/constants";
 import { usePlayerStore } from "@/lib/store/playerStore";
 import { useGameStore } from "@/lib/store/gameStore";
@@ -53,6 +54,17 @@ export default function GameRoomPage() {
   const [newName, setNewName] = useState("");
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  // Context menu state (admin player management)
+  const [contextMenu, setContextMenu] = useState<{
+    playerId: string;
+    playerName: string;
+    isSpectator: boolean;
+    x: number;
+    y: number;
+  } | null>(null);
+  const [isContextMenuLoading, setIsContextMenuLoading] = useState(false);
+  const [wasKicked, setWasKicked] = useState(false);
 
   // Subscribe to realtime updates
   useGameRealtime(gameId);
@@ -219,6 +231,100 @@ export default function GameRoomPage() {
   const takenAvatars = players
     .filter((p) => p.id !== currentPlayer?.id && p.avatar)
     .map((p) => p.avatar);
+
+  // Handle right-click on player (admin only)
+  const handlePlayerContextMenu = (
+    e: React.MouseEvent,
+    player: { id: string; name: string; is_spectator: boolean }
+  ) => {
+    e.preventDefault();
+    if (!isPlayerAdmin || player.id === currentPlayer?.id) return;
+
+    setContextMenu({
+      playerId: player.id,
+      playerName: player.name,
+      isSpectator: player.is_spectator,
+      x: e.clientX,
+      y: e.clientY,
+    });
+  };
+
+  // Kick player
+  const handleKickPlayer = async () => {
+    if (!contextMenu || !currentPlayer) return;
+    setIsContextMenuLoading(true);
+    try {
+      const res = await fetch(
+        `/api/players/${contextMenu.playerId}?adminPlayerId=${currentPlayer.id}`,
+        { method: "DELETE" }
+      );
+      if (res.ok) {
+        // Update store directly (realtime doesn't reliably send old.id on delete)
+        useGameStore.getState().removePlayer(contextMenu.playerId);
+        setContextMenu(null);
+      }
+    } catch (error) {
+      // Silent error
+    } finally {
+      setIsContextMenuLoading(false);
+    }
+  };
+
+  // Make spectator / voter
+  const handleMakeSpectator = async () => {
+    if (!contextMenu || !currentPlayer) return;
+    setIsContextMenuLoading(true);
+    try {
+      const res = await fetch(`/api/players/${contextMenu.playerId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          is_spectator: !contextMenu.isSpectator,
+          adminPlayerId: currentPlayer.id,
+        }),
+      });
+      if (res.ok) {
+        setContextMenu(null);
+      }
+    } catch (error) {
+      // Silent error
+    } finally {
+      setIsContextMenuLoading(false);
+    }
+  };
+
+  // Transfer admin
+  const handleTransferAdmin = async () => {
+    if (!contextMenu || !currentPlayer) return;
+    setIsContextMenuLoading(true);
+    try {
+      const res = await fetch(`/api/games/${gameId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          newCreatorId: contextMenu.playerId,
+          playerId: currentPlayer.id,
+        }),
+      });
+      if (res.ok) {
+        setContextMenu(null);
+      }
+    } catch (error) {
+      // Silent error
+    } finally {
+      setIsContextMenuLoading(false);
+    }
+  };
+
+  // Detect if current player was kicked
+  useEffect(() => {
+    if (!currentPlayer || players.length === 0) return;
+
+    const stillInGame = players.some((p) => p.id === currentPlayer.id);
+    if (!stillInGame) {
+      setWasKicked(true);
+    }
+  }, [players, currentPlayer]);
 
   const handleReveal = async () => {
     if (!isPlayerAdmin) return;
@@ -531,6 +637,11 @@ export default function GameRoomPage() {
                 showConfidence={isConfidenceRevealed}
                 isCreator={game?.creator_id === player.id}
                 position="top"
+                isSpectator={player.is_spectator}
+                onContextMenu={isPlayerAdmin && player.id !== currentPlayer?.id
+                  ? (e) => handlePlayerContextMenu(e, player)
+                  : undefined
+                }
               />
             ))}
           </div>
@@ -547,6 +658,11 @@ export default function GameRoomPage() {
                 showConfidence={isConfidenceRevealed}
                 isCreator={game?.creator_id === player.id}
                 position="bottom"
+                isSpectator={player.is_spectator}
+                onContextMenu={isPlayerAdmin && player.id !== currentPlayer?.id
+                  ? (e) => handlePlayerContextMenu(e, player)
+                  : undefined
+                }
               />
             ))}
           </div>
@@ -691,6 +807,43 @@ export default function GameRoomPage() {
             </div>
           </div>
         )}
+
+        {/* Context Menu (admin player management) */}
+        {contextMenu && (
+          <ContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            isSpectator={contextMenu.isSpectator}
+            isLoading={isContextMenuLoading}
+            onClose={() => setContextMenu(null)}
+            onKick={handleKickPlayer}
+            onMakeSpectator={handleMakeSpectator}
+            onTransferAdmin={handleTransferAdmin}
+          />
+        )}
+
+        {/* Kicked Modal */}
+        {wasKicked && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center">
+              <div className="w-16 h-16 bg-[var(--danger)]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <UserX size={32} className="text-[var(--danger)]" />
+              </div>
+              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+                Вас удалили из игры
+              </h2>
+              <p className="text-[var(--text-secondary)] mb-6">
+                Администратор удалил вас из этой сессии
+              </p>
+              <Button onClick={() => {
+                clearSession(gameId);
+                router.push("/");
+              }}>
+                На главную
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Issues Sidebar */}
@@ -723,6 +876,8 @@ function PlayerSeat({
   showConfidence,
   isCreator,
   position,
+  isSpectator,
+  onContextMenu,
 }: {
   player: { id: string; name: string; avatar: string | null };
   vote: string | null;
@@ -732,6 +887,8 @@ function PlayerSeat({
   showConfidence?: boolean;
   isCreator?: boolean;
   position: "top" | "bottom";
+  isSpectator?: boolean;
+  onContextMenu?: (e: React.MouseEvent) => void;
 }) {
   const hasVoted = vote !== null;
   const hasConfidenceVote = confidenceVote !== null && confidenceVote !== undefined;
@@ -766,13 +923,17 @@ function PlayerSeat({
   );
 
   const avatar = (
-    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm ${isCurrentPlayer ? "bg-[var(--primary-light)]" : "bg-white"}`}>
+    <div
+      onContextMenu={onContextMenu}
+      className={`flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm cursor-default select-none ${isCurrentPlayer ? "bg-[var(--primary-light)]" : "bg-white"} ${onContextMenu ? "hover:ring-2 hover:ring-[var(--primary)]/30" : ""}`}
+    >
       {isCreator && (
         <span className="text-sm" title="Game Admin">👑</span>
       )}
       <Avatar src={player.avatar} size={40} />
-      <span className="text-sm font-medium text-[var(--text-primary)]">
+      <span className={`text-sm font-medium ${isSpectator ? "text-[var(--text-secondary)] italic" : "text-[var(--text-primary)]"}`}>
         {player.name}
+        {isSpectator && <span className="ml-1 text-xs">(spectator)</span>}
       </span>
     </div>
   );

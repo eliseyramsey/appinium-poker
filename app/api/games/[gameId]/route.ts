@@ -42,7 +42,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .select("*")
       .eq("game_id", gameId);
 
-    return NextResponse.json({ ...game, players: players || [] });
+    // Cast game to object (we know it exists after error check)
+    const gameData = game as Record<string, unknown>;
+    return NextResponse.json({ ...gameData, players: players || [] });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
@@ -59,6 +61,7 @@ interface UpdateGameBody {
   hostPlayerId?: string | null;
   confidenceStatus?: "idle" | "voting" | "revealed";
   playerId?: string; // For admin check
+  newCreatorId?: string; // For transferring admin
 }
 
 // Helper to calculate average from votes
@@ -96,16 +99,34 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const gameInfo = existingGame as { creator_id: string | null; current_issue_id: string | null } | null;
 
-    // Admin-only operations: reveal, new round, set current issue, confidence vote
+    // Admin-only operations: reveal, new round, set current issue, confidence vote, transfer admin
     const isAdminAction = body.status !== undefined ||
                           body.currentIssueId !== undefined ||
-                          body.confidenceStatus !== undefined;
+                          body.confidenceStatus !== undefined ||
+                          body.newCreatorId !== undefined;
 
     if (isAdminAction && gameInfo?.creator_id && body.playerId !== gameInfo.creator_id) {
       return NextResponse.json(
         { error: "Only the game creator can perform this action" },
         { status: 403 }
       );
+    }
+
+    // Transfer admin: verify new creator exists in this game
+    if (body.newCreatorId !== undefined) {
+      const { data: newAdmin } = await supabase
+        .from("players")
+        .select("id")
+        .eq("id", body.newCreatorId)
+        .eq("game_id", gameId)
+        .single();
+
+      if (!newAdmin) {
+        return NextResponse.json(
+          { error: "New admin must be a player in this game" },
+          { status: 400 }
+        );
+      }
     }
 
     // Build update object
@@ -122,6 +143,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
     if (body.confidenceStatus !== undefined) {
       (updateData as Record<string, unknown>).confidence_status = body.confidenceStatus;
+    }
+    if (body.newCreatorId !== undefined) {
+      (updateData as Record<string, unknown>).creator_id = body.newCreatorId;
     }
 
     if (Object.keys(updateData).length === 0) {

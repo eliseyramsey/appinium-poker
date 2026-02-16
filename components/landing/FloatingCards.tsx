@@ -4,21 +4,40 @@ import { useEffect } from "react";
 import { TEAM_AVATARS } from "@/lib/constants";
 
 // Floating cards with Fibonacci numbers for landing page decoration
-const FLOATING_CARDS = [
+type CardColor = "primary" | "accent" | "success";
+
+interface FloatingCard {
+  value: string;
+  top?: string;
+  bottom?: string;
+  left?: string;
+  right?: string;
+  delay: number;
+  color: CardColor;
+}
+
+const FLOATING_CARDS: FloatingCard[] = [
   { value: "5", top: "18%", left: "8%", delay: 0, color: "primary" },
   { value: "8", top: "22%", right: "12%", delay: 2, color: "accent" },
   { value: "13", bottom: "25%", left: "12%", delay: 4, color: "primary" },
   { value: "21", bottom: "28%", right: "8%", delay: 6, color: "success" },
-] as const;
+];
 
 // Floating team avatars for fun
-const FLOATING_AVATARS = [
+interface FloatingAvatar {
+  avatarIndex: number;
+  top?: string;
+  bottom?: string;
+  left?: string;
+  right?: string;
+  delay: number;
+}
+
+const FLOATING_AVATARS: FloatingAvatar[] = [
   { avatarIndex: 0, top: "35%", left: "5%", delay: 1 },
   { avatarIndex: 5, top: "12%", right: "25%", delay: 3 },
   { avatarIndex: 10, bottom: "15%", right: "18%", delay: 5 },
-] as const;
-
-type CardColor = "primary" | "accent" | "success";
+];
 
 const colorStyles: Record<CardColor, { borderColor: string; color: string }> = {
   primary: { borderColor: "#5533ff", color: "#5533ff" },
