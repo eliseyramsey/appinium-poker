@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Plus, Trash2, Edit2, Check, X, ListTodo, Hand } from "lucide-react";
+import { Plus, Trash2, Edit2, Check, X, ListTodo, Hand, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useGameStore } from "@/lib/store/gameStore";
@@ -188,8 +188,16 @@ export function IssuesSidebar({ gameId, isOpen, onClose, onConfidenceVote }: Iss
         {/* Issues list */}
         <div className="flex-1 overflow-y-auto p-2 bg-white">
           {issues.length === 0 ? (
-            <div className="text-center py-8 text-[var(--text-secondary)]">
-              No issues yet. Add one above!
+            <div className="flex flex-col items-center justify-center py-8 px-4 mx-2 mt-2 border-2 border-dashed border-[var(--border)] rounded-lg bg-[var(--bg-surface)]">
+              <div className="w-12 h-12 rounded-full bg-[var(--primary-light)] flex items-center justify-center mb-3">
+                <ClipboardList size={24} className="text-[var(--primary)]" />
+              </div>
+              <p className="font-medium text-[var(--text-primary)] mb-1">No issues yet</p>
+              <p className="text-sm text-[var(--text-secondary)] text-center">
+                {isPlayerAdmin
+                  ? "Add your first issue above to start estimating"
+                  : "Waiting for admin to add issues"}
+              </p>
             </div>
           ) : (
             <div className="space-y-2">
