@@ -1,5 +1,6 @@
-// Database types - will be generated from Supabase schema
-// For now, define manually based on PLANNING.md
+// Database types - manually defined to match Supabase schema
+// These types enable proper TypeScript inference with Supabase client operations
+// NOTE: For full type inference, use `npx supabase gen types` to generate from DB schema
 
 export type GameStatus = "voting" | "revealed";
 export type IssueStatus = "pending" | "voting" | "voted";
@@ -114,12 +115,47 @@ export type ConfidenceVoteInsert = {
   session_name?: string | null;
 };
 
-// Update types
-export type GameUpdate = Partial<Omit<Game, "id" | "created_at">>;
-export type PlayerUpdate = Partial<Omit<Player, "id" | "created_at">>;
-export type IssueUpdate = Partial<Omit<Issue, "id" | "created_at">>;
-export type VoteUpdate = Partial<Omit<Vote, "id" | "created_at">>;
-export type ConfidenceVoteUpdate = Partial<Omit<ConfidenceVote, "id" | "created_at">>;
+// Update types - explicitly define to ensure type compatibility with Supabase operations
+export interface GameUpdate {
+  name?: string;
+  voting_system?: string;
+  who_can_reveal?: Permission;
+  who_can_manage?: Permission;
+  auto_reveal?: boolean;
+  fun_features?: boolean;
+  show_average?: boolean;
+  show_countdown?: boolean;
+  host_player_id?: string | null;
+  current_issue_id?: string | null;
+  status?: GameStatus;
+  creator_id?: string | null;
+  confidence_status?: ConfidenceStatus;
+}
+
+export interface PlayerUpdate {
+  name?: string;
+  avatar?: string | null;
+  is_spectator?: boolean;
+  is_online?: boolean;
+  last_seen?: string;
+}
+
+export interface IssueUpdate {
+  title?: string;
+  description?: string | null;
+  status?: IssueStatus;
+  final_score?: number | null;
+  sort_order?: number;
+}
+
+export interface VoteUpdate {
+  value?: string;
+}
+
+export interface ConfidenceVoteUpdate {
+  value?: number;
+  session_name?: string | null;
+}
 
 // Supabase Database type - matches the generated schema format
 export interface Database {

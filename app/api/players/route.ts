@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await supabase
       .from("players")
-      .insert(playerData as never)
+      .insert(playerData)
       .select()
       .single();
 
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     if (!gameData.creator_id) {
       await supabase
         .from("games")
-        .update({ creator_id: playerId } as never)
+        .update({ creator_id: playerId })
         .eq("id", body.gameId);
     }
 

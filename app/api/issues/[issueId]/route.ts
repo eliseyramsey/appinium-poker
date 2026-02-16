@@ -140,7 +140,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const { data, error } = await supabase
       .from("issues")
-      .update(updateData as never)
+      .update(updateData)
       .eq("id", issueId)
       .select()
       .single();

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase/client";
+import type { PlayerUpdate } from "@/lib/supabase/types";
 
 interface RouteParams {
   params: Promise<{ playerId: string }>;
@@ -67,7 +68,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     // Build update object
-    const updateData: Record<string, unknown> = {};
+    const updateData: PlayerUpdate = {};
 
     if (body.name !== undefined) {
       const trimmedName = body.name.trim();
@@ -113,7 +114,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const { data, error } = await supabase
       .from("players")
-      .update(updateData as never)
+      .update(updateData)
       .eq("id", playerId)
       .select()
       .single();

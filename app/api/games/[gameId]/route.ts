@@ -142,10 +142,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       updateData.host_player_id = body.hostPlayerId;
     }
     if (body.confidenceStatus !== undefined) {
-      (updateData as Record<string, unknown>).confidence_status = body.confidenceStatus;
+      updateData.confidence_status = body.confidenceStatus;
     }
     if (body.newCreatorId !== undefined) {
-      (updateData as Record<string, unknown>).creator_id = body.newCreatorId;
+      updateData.creator_id = body.newCreatorId;
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -161,7 +161,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       if (body.currentIssueId) {
         await supabase
           .from("issues")
-          .update({ status: "voting" } as never)
+          .update({ status: "voting" })
           .eq("id", body.currentIssueId);
       }
     }
@@ -186,7 +186,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             .update({
               final_score: average,
               status: "voted",
-            } as never)
+            })
             .eq("id", currentIssueId);
         }
       }
@@ -194,7 +194,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const { data, error } = await supabase
       .from("games")
-      .update(updateData as never)
+      .update(updateData)
       .eq("id", gameId)
       .select()
       .single();

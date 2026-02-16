@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await supabase
       .from("votes")
-      .upsert(voteData as never, {
+      .upsert(voteData, {
         onConflict: "issue_id,player_id",
         ignoreDuplicates: false,
       })

@@ -56,10 +56,9 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabase();
 
-    // Type assertion needed until Supabase types are auto-generated
     const { data, error } = await supabase
       .from("games")
-      .insert(gameData as never)
+      .insert(gameData)
       .select()
       .single();
 

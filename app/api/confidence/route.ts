@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await supabase
       .from("confidence_votes")
-      .upsert(voteData as never, {
+      .upsert(voteData, {
         onConflict: "game_id,player_id",
         ignoreDuplicates: false
       })
@@ -123,7 +123,7 @@ export async function DELETE(request: NextRequest) {
     // Reset confidence status to voting
     await supabase
       .from("games")
-      .update({ confidence_status: "voting" } as never)
+      .update({ confidence_status: "voting" })
       .eq("id", gameId);
 
     return NextResponse.json({ success: true });
