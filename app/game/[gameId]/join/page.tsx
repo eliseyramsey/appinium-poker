@@ -7,7 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Toggle } from "@/components/ui/Toggle";
-import { TEAM_AVATARS, TeamAvatar } from "@/lib/constants";
+import { TEAM_AVATARS, TeamAvatar, DEFAULT_GAME_NAME } from "@/lib/constants";
 import { usePlayerStore } from "@/lib/store/playerStore";
 import type { Player } from "@/lib/supabase/types";
 
@@ -17,7 +17,7 @@ export default function JoinGamePage() {
   const searchParams = useSearchParams();
   const gameId = params.gameId as string;
   const isHost = searchParams.get("host") === "true";
-  const gameName = searchParams.get("name") || "Planning Session";
+  const gameName = searchParams.get("name") || DEFAULT_GAME_NAME;
 
   const [playerName, setPlayerName] = useState("");
   const [isSpectator, setIsSpectator] = useState(false);

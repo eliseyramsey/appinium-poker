@@ -71,13 +71,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Request body for DELETE
-interface ClearConfidenceBody {
-  gameId: string;
-  playerId: string; // For admin check
-}
-
-// DELETE /api/confidence - Clear all confidence votes (admin only)
+// DELETE /api/confidence?gameId=xxx&playerId=yyy - Clear all confidence votes (admin only)
 export async function DELETE(request: NextRequest) {
   try {
     if (!isSupabaseConfigured()) {
@@ -87,11 +81,13 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const body = (await request.json()) as ClearConfidenceBody;
+    const { searchParams } = new URL(request.url);
+    const gameId = searchParams.get("gameId");
+    const playerId = searchParams.get("playerId");
 
-    if (!body.gameId || !body.playerId) {
+    if (!gameId || !playerId) {
       return NextResponse.json(
-        { error: "gameId and playerId are required" },
+        { error: "gameId and playerId query params are required" },
         { status: 400 }
       );
     }
@@ -102,12 +98,12 @@ export async function DELETE(request: NextRequest) {
     const { data: game } = await supabase
       .from("games")
       .select("creator_id")
-      .eq("id", body.gameId)
+      .eq("id", gameId)
       .single();
 
     const gameData = game as { creator_id: string | null } | null;
 
-    if (gameData?.creator_id && body.playerId !== gameData.creator_id) {
+    if (gameData?.creator_id && playerId !== gameData.creator_id) {
       return NextResponse.json(
         { error: "Only the game creator can reset confidence votes" },
         { status: 403 }
@@ -118,7 +114,7 @@ export async function DELETE(request: NextRequest) {
     const { error } = await supabase
       .from("confidence_votes")
       .delete()
-      .eq("game_id", body.gameId);
+      .eq("game_id", gameId);
 
     if (error) {
       throw error;
@@ -128,7 +124,7 @@ export async function DELETE(request: NextRequest) {
     await supabase
       .from("games")
       .update({ confidence_status: "voting" } as never)
-      .eq("id", body.gameId);
+      .eq("id", gameId);
 
     return NextResponse.json({ success: true });
   } catch (error) {

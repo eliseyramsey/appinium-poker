@@ -7,7 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Toggle } from "@/components/ui/Toggle";
-import { DEFAULT_GAME_SETTINGS, type GameSettings, type VotingSystem } from "@/lib/constants";
+import { DEFAULT_GAME_SETTINGS, DEFAULT_GAME_NAME, type GameSettings, type VotingSystem } from "@/lib/constants";
 
 export default function CreateGamePage() {
   const router = useRouter();
@@ -24,7 +24,7 @@ export default function CreateGamePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: gameName || "Planning Session",
+          name: gameName || DEFAULT_GAME_NAME,
           votingSystem: settings.votingSystem,
           whoCanReveal: settings.whoCanReveal,
           whoCanManage: settings.whoCanManage,

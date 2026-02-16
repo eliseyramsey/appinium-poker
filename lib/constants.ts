@@ -97,3 +97,6 @@ export function getAvatarStyle(src: string | null): { backgroundSize: string; ba
 // ID length for nanoid
 export const GAME_ID_LENGTH = 8;
 export const PLAYER_ID_LENGTH = 12;
+
+// Default values
+export const DEFAULT_GAME_NAME = "Planning Session";

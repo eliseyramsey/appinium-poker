@@ -10,7 +10,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { ContextMenu } from "@/components/ui/ContextMenu";
 import { MemeOverlay } from "@/components/memes/MemeOverlay";
 import { selectMeme, type Meme } from "@/components/memes/memeData";
-import { VOTING_CARDS, TEAM_AVATARS } from "@/lib/constants";
+import { VOTING_CARDS, TEAM_AVATARS, DEFAULT_GAME_NAME } from "@/lib/constants";
 import { usePlayerStore } from "@/lib/store/playerStore";
 import { useGameStore } from "@/lib/store/gameStore";
 import { useGameRealtime } from "@/lib/hooks/useGameRealtime";
@@ -508,7 +508,7 @@ export default function GameRoomPage() {
                 🃏
               </div>
               <div className="px-3 py-1.5 bg-[var(--bg-surface)] rounded-lg text-sm font-medium text-[var(--text-primary)]">
-                {currentIssue?.title || "Planning Session"}
+                {currentIssue?.title || DEFAULT_GAME_NAME}
               </div>
             </div>
 
