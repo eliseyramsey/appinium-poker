@@ -374,9 +374,9 @@ export default function GameRoomPage() {
     if (!isPlayerAdmin) return;
     setIsLoading(true);
     try {
-      // Clear votes from database
-      if (game?.current_issue_id) {
-        await fetch(`/api/votes?issueId=${game.current_issue_id}`, {
+      // Clear votes from database (admin only)
+      if (game?.current_issue_id && currentPlayer?.id) {
+        await fetch(`/api/votes?issueId=${game.current_issue_id}&adminPlayerId=${currentPlayer.id}`, {
           method: "DELETE",
         });
       }
@@ -439,10 +439,8 @@ export default function GameRoomPage() {
     if (!isPlayerAdmin) return;
     try {
       // Clear previous votes
-      await fetch("/api/confidence", {
+      await fetch(`/api/confidence?gameId=${gameId}&playerId=${currentPlayer?.id}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameId, playerId: currentPlayer?.id }),
       });
 
       // Set status to voting

@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// DELETE /api/votes?issueId=xxx - Clear all votes for an issue
+// DELETE /api/votes?issueId=xxx&adminPlayerId=yyy - Clear all votes for an issue (admin only)
 export async function DELETE(request: NextRequest) {
   try {
     if (!isSupabaseConfigured()) {
@@ -86,15 +86,42 @@ export async function DELETE(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const issueId = searchParams.get("issueId");
+    const adminPlayerId = searchParams.get("adminPlayerId");
 
-    if (!issueId) {
+    if (!issueId || !adminPlayerId) {
       return NextResponse.json(
-        { error: "issueId query parameter is required" },
+        { error: "issueId and adminPlayerId are required" },
         { status: 400 }
       );
     }
 
     const supabase = getSupabase();
+
+    // Get issue to find game_id
+    const { data: issue } = await supabase
+      .from("issues")
+      .select("game_id")
+      .eq("id", issueId)
+      .single();
+
+    if (!issue) {
+      return NextResponse.json({ error: "Issue not found" }, { status: 404 });
+    }
+
+    // Verify admin
+    const { data: game } = await supabase
+      .from("games")
+      .select("creator_id")
+      .eq("id", (issue as { game_id: string }).game_id)
+      .single();
+
+    const gameData = game as { creator_id: string } | null;
+    if (!gameData || gameData.creator_id !== adminPlayerId) {
+      return NextResponse.json(
+        { error: "Only admin can clear votes" },
+        { status: 403 }
+      );
+    }
 
     const { error } = await supabase
       .from("votes")
