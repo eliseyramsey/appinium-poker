@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase/client";
 import { createVoteId } from "@/lib/utils/gameId";
+import { VOTING_CARDS } from "@/lib/constants";
 import type { VoteInsert } from "@/lib/supabase/types";
 
 // Request body for POST
@@ -9,6 +10,9 @@ interface SubmitVoteBody {
   playerId: string;
   value: string;
 }
+
+// Valid vote values from constants
+const VALID_VOTE_VALUES = VOTING_CARDS.map((c) => c.value) as string[];
 
 // POST /api/votes - Submit a vote
 export async function POST(request: NextRequest) {
@@ -30,33 +34,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = getSupabase();
-
-    // Upsert vote (update if exists, insert if not)
-    // First check if vote exists
-    const { data: existingVote } = await supabase
-      .from("votes")
-      .select("id")
-      .eq("issue_id", body.issueId)
-      .eq("player_id", body.playerId)
-      .single();
-
-    const existingVoteData = existingVote as { id: string } | null;
-
-    if (existingVoteData) {
-      // Update existing vote
-      const { data, error } = await supabase
-        .from("votes")
-        .update({ value: body.value } as never)
-        .eq("id", existingVoteData.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return NextResponse.json(data);
+    // Validate vote value against allowed values
+    if (!VALID_VOTE_VALUES.includes(body.value)) {
+      return NextResponse.json(
+        { error: "Invalid vote value" },
+        { status: 400 }
+      );
     }
 
-    // Create new vote
+    const supabase = getSupabase();
+
+    // Atomic upsert (no race condition)
+    // Database has UNIQUE constraint on (issue_id, player_id)
     const voteData: VoteInsert = {
       id: createVoteId(),
       issue_id: body.issueId,
@@ -66,7 +55,10 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await supabase
       .from("votes")
-      .insert(voteData as never)
+      .upsert(voteData as never, {
+        onConflict: "issue_id,player_id",
+        ignoreDuplicates: false,
+      })
       .select()
       .single();
 
