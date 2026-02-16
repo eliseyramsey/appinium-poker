@@ -7,16 +7,16 @@
 
 ### Admin Player Management
 
-- [ ] **ADMIN-01**: Admin может кикнуть игрока из игры (удалить из players)
-- [ ] **ADMIN-02**: Admin может назначить игрока спектатором (is_spectator = true)
-- [ ] **ADMIN-03**: Admin может передать админку другому игроку (сменить creator_id)
+- [x] **ADMIN-01**: Admin может кикнуть игрока из игры (удалить из players)
+- [x] **ADMIN-02**: Admin может назначить игрока спектатором (is_spectator = true)
+- [x] **ADMIN-03**: Admin может передать админку другому игроку (сменить creator_id)
 
 ### Meme System
 
-- [ ] **MEME-01**: После reveal показывается мем на основе паттерна голосов
-- [ ] **MEME-02**: Категории: consensus (все одинаково), chaos (разброс >5), confused (?), break (☕), random
+- [x] **MEME-01**: После reveal показывается мем на основе паттерна голосов
+- [x] **MEME-02**: Категории: consensus (все одинаково), chaos (разброс >5), confused (?), break (☕), random
 - [ ] **MEME-03**: ~50 русских мемов 2005-2020 распределены по категориям
-- [ ] **MEME-04**: Мем показывается в модалке поверх карт, закрывается кликом
+- [x] **MEME-04**: Мем показывается в модалке поверх карт, закрывается кликом
 
 ### Deploy
 
@@ -41,13 +41,13 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ADMIN-01 | Phase 1 | Pending |
-| ADMIN-02 | Phase 1 | Pending |
-| ADMIN-03 | Phase 1 | Pending |
-| MEME-01 | Phase 2 | Pending |
-| MEME-02 | Phase 2 | Pending |
-| MEME-03 | Phase 2 | Pending |
-| MEME-04 | Phase 2 | Pending |
+| ADMIN-01 | Phase 1 | ✓ Complete |
+| ADMIN-02 | Phase 1 | ✓ Complete |
+| ADMIN-03 | Phase 1 | ✓ Complete |
+| MEME-01 | Phase 2 | ✓ Complete |
+| MEME-02 | Phase 2 | ✓ Complete |
+| MEME-03 | Phase 2 | Pending (needs images) |
+| MEME-04 | Phase 2 | ✓ Complete |
 | DEPLOY-01 | Phase 3 | Pending |
 | DEPLOY-02 | Phase 3 | Pending |
 | DEPLOY-03 | Phase 3 | Pending |
