@@ -8,10 +8,10 @@
 
 | # | Phase | Goal | Requirements | Status |
 |---|-------|------|--------------|--------|
-| 1 | Admin Player Management | Admin может управлять игроками | ADMIN-01, ADMIN-02, ADMIN-03 | ✓ Complete |
-| 2 | Meme System | Мемы показываются после reveal | MEME-01, MEME-02, MEME-03, MEME-04 | ✓ Complete |
-| 3 | Deploy | Приложение доступно публично | DEPLOY-01, DEPLOY-02, DEPLOY-03 | ✓ Complete |
-| 4 | Bug Fixes | Исправить security и quality баги | BUGS-01 to BUGS-14 | Pending |
+| 1 | Admin Player Management | Admin может управлять игроками | ADMIN-01, ADMIN-02, ADMIN-03 | Complete |
+| 2 | Meme System | Мемы показываются после reveal | MEME-01, MEME-02, MEME-03, MEME-04 | Complete |
+| 3 | Deploy | Приложение доступно публично | DEPLOY-01, DEPLOY-02, DEPLOY-03 | Complete |
+| 4 | Bug Fixes | Исправить security и quality баги | BUGS-01 to BUGS-14 | In Progress |
 
 ---
 
@@ -28,7 +28,7 @@
 1. Правый клик на игрока показывает контекстное меню (только для админа)
 2. "Kick" удаляет игрока из игры, он видит сообщение "Вас удалили"
 3. "Make Spectator" меняет is_spectator, игрок больше не может голосовать
-4. "Transfer Admin" меняет creator_id, у нового админа появляется 👑
+4. "Transfer Admin" меняет creator_id, у нового админа появляется crown
 
 **Dependencies:** None (существующая админ-система)
 
@@ -46,10 +46,10 @@
 
 **Success Criteria:**
 1. После reveal появляется модалка с мемом
-2. consensus (все одинаково) → мем про согласие
-3. chaos (разброс >5 points) → мем про хаос
-4. confused (кто-то ?) → мем про непонимание
-5. break (кто-то ☕) → мем про перерыв
+2. consensus (все одинаково) -> мем про согласие
+3. chaos (разброс >5 points) -> мем про хаос
+4. confused (кто-то ?) -> мем про непонимание
+5. break (кто-то coffee) -> мем про перерыв
 6. Клик по модалке закрывает её
 
 **Dependencies:** Phase 1 не блокирует (параллельно можно)
@@ -100,6 +100,14 @@
 - BUGS-12: Centralize hardcoded strings
 - BUGS-13: Document useEffect deps limitation
 - BUGS-14: Fix join page error state bug
+
+**Plans:** 4 plans
+
+Plans:
+- [ ] 4-01-PLAN.md — Critical API Security (BUGS-01, 02, 03, 04, 07)
+- [ ] 4-02-PLAN.md — Code Quality Cleanup (BUGS-05, 08, 09, 12, 13)
+- [ ] 4-03-PLAN.md — Component Refactoring (BUGS-10)
+- [ ] 4-04-PLAN.md — Error Feedback + Types (BUGS-06, 14, 11)
 
 **Success Criteria:**
 1. All 4 critical security issues fixed
