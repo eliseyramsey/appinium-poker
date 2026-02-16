@@ -72,6 +72,9 @@ function GameRoomContent() {
   const [currentMeme, setCurrentMeme] = useState<Meme | null>(null);
   const prevIsRevealedRef = useRef<boolean | null>(null); // Track previous state to detect transitions
 
+  // Track previous players to detect kicks (vs initial load)
+  const prevPlayersRef = useRef<typeof players | null>(null);
+
   // Subscribe to realtime updates
   useGameRealtime(gameId);
 
@@ -335,11 +338,23 @@ function GameRoomContent() {
   };
 
   // Detect if current player was kicked
+  // Only trigger if player WAS in previous players list and is now missing
+  // This prevents false positives during initial load or session restoration
   useEffect(() => {
+    const prevPlayers = prevPlayersRef.current;
+    prevPlayersRef.current = players;
+
+    // Skip if no current player or players not loaded yet
     if (!currentPlayer || players.length === 0) return;
 
+    // Skip if this is the first time we have players (initial load)
+    if (!prevPlayers || prevPlayers.length === 0) return;
+
+    // Check if player was in previous list but is now missing
+    const wasInGame = prevPlayers.some((p) => p.id === currentPlayer.id);
     const stillInGame = players.some((p) => p.id === currentPlayer.id);
-    if (!stillInGame) {
+
+    if (wasInGame && !stillInGame) {
       setWasKicked(true);
     }
   }, [players, currentPlayer]);
