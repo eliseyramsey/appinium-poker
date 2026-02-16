@@ -861,9 +861,9 @@ export default function GameRoomPage() {
               </p>
               <Button onClick={() => {
                 clearSession(gameId);
-                router.push("/");
+                router.push(`/game/${gameId}/join`);
               }}>
-                На главную
+                Присоединиться снова
               </Button>
             </div>
           </div>
