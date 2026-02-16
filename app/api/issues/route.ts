@@ -6,6 +6,7 @@ import type { IssueInsert } from "@/lib/supabase/types";
 // Request body for POST
 interface CreateIssueBody {
   gameId: string;
+  playerId: string;
   title: string;
   description?: string | null;
 }
@@ -63,14 +64,29 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as CreateIssueBody;
 
     // Validate required fields
-    if (!body.gameId || !body.title?.trim()) {
+    if (!body.gameId || !body.playerId || !body.title?.trim()) {
       return NextResponse.json(
-        { error: "gameId and title are required" },
+        { error: "gameId, playerId, and title are required" },
         { status: 400 }
       );
     }
 
     const supabase = getSupabase();
+
+    // Verify admin
+    const { data: game } = await supabase
+      .from("games")
+      .select("creator_id")
+      .eq("id", body.gameId)
+      .single();
+
+    const gameData = game as { creator_id: string } | null;
+    if (!gameData || gameData.creator_id !== body.playerId) {
+      return NextResponse.json(
+        { error: "Only admin can create issues" },
+        { status: 403 }
+      );
+    }
 
     // Get max sort_order for this game
     const { data: lastIssue } = await supabase

@@ -39,14 +39,18 @@ export function IssuesSidebar({ gameId, isOpen, onClose, onConfidenceVote }: Iss
 
   const handleAddIssue = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newIssueTitle.trim()) return;
+    if (!newIssueTitle.trim() || !currentPlayer?.id) return;
 
     setIsAddingIssue(true);
     try {
       await fetch("/api/issues", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameId, title: newIssueTitle.trim() }),
+        body: JSON.stringify({
+          gameId,
+          playerId: currentPlayer.id,
+          title: newIssueTitle.trim(),
+        }),
       });
       setNewIssueTitle("");
     } catch {
@@ -79,12 +83,16 @@ export function IssuesSidebar({ gameId, isOpen, onClose, onConfidenceVote }: Iss
   };
 
   const handleSaveEdit = async () => {
-    if (!editingIssueId || !editingTitle.trim()) return;
+    if (!editingIssueId || !editingTitle.trim() || !currentPlayer?.id) return;
     try {
       const res = await fetch(`/api/issues/${editingIssueId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: editingTitle.trim() }),
+        body: JSON.stringify({
+          gameId,
+          playerId: currentPlayer.id,
+          title: editingTitle.trim(),
+        }),
       });
       if (res.ok) {
         // Update store directly for immediate feedback
@@ -104,8 +112,12 @@ export function IssuesSidebar({ gameId, isOpen, onClose, onConfidenceVote }: Iss
   };
 
   const handleDeleteIssue = async (issueId: string) => {
+    if (!currentPlayer?.id) return;
     try {
-      const res = await fetch(`/api/issues/${issueId}`, { method: "DELETE" });
+      const res = await fetch(
+        `/api/issues/${issueId}?gameId=${gameId}&playerId=${currentPlayer.id}`,
+        { method: "DELETE" }
+      );
       if (res.ok) {
         // Update store directly (Realtime DELETE may not include old.id)
         useGameStore.getState().removeIssue(issueId);

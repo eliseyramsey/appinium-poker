@@ -47,6 +47,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 // Request body for PATCH
 interface UpdateIssueBody {
+  gameId: string;
+  playerId: string;
   title?: string;
   description?: string | null;
   status?: IssueStatus;
@@ -54,7 +56,7 @@ interface UpdateIssueBody {
   sortOrder?: number;
 }
 
-// PATCH /api/issues/[issueId] - Update issue
+// PATCH /api/issues/[issueId] - Update issue (admin only)
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     if (!isSupabaseConfigured()) {
@@ -67,6 +69,48 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const { issueId } = await params;
     const body = (await request.json()) as UpdateIssueBody;
     const supabase = getSupabase();
+
+    // Validate required auth fields
+    if (!body.gameId || !body.playerId) {
+      return NextResponse.json(
+        { error: "gameId and playerId are required" },
+        { status: 400 }
+      );
+    }
+
+    // Get issue to verify it belongs to the game
+    const { data: issue } = await supabase
+      .from("issues")
+      .select("game_id")
+      .eq("id", issueId)
+      .single();
+
+    if (!issue) {
+      return NextResponse.json({ error: "Issue not found" }, { status: 404 });
+    }
+
+    const issueData = issue as { game_id: string };
+    if (issueData.game_id !== body.gameId) {
+      return NextResponse.json(
+        { error: "Issue does not belong to this game" },
+        { status: 403 }
+      );
+    }
+
+    // Verify admin
+    const { data: game } = await supabase
+      .from("games")
+      .select("creator_id")
+      .eq("id", body.gameId)
+      .single();
+
+    const gameData = game as { creator_id: string } | null;
+    if (!gameData || gameData.creator_id !== body.playerId) {
+      return NextResponse.json(
+        { error: "Only admin can update issues" },
+        { status: 403 }
+      );
+    }
 
     // Build update object
     const updateData: IssueUpdate = {};
@@ -121,7 +165,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// DELETE /api/issues/[issueId] - Delete issue
+// DELETE /api/issues/[issueId]?gameId=xxx&playerId=yyy - Delete issue (admin only)
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     if (!isSupabaseConfigured()) {
@@ -132,7 +176,52 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     const { issueId } = await params;
+    const { searchParams } = new URL(request.url);
+    const gameId = searchParams.get("gameId");
+    const playerId = searchParams.get("playerId");
+
+    if (!gameId || !playerId) {
+      return NextResponse.json(
+        { error: "gameId and playerId are required" },
+        { status: 400 }
+      );
+    }
+
     const supabase = getSupabase();
+
+    // Get issue to verify it belongs to the game
+    const { data: issue } = await supabase
+      .from("issues")
+      .select("game_id")
+      .eq("id", issueId)
+      .single();
+
+    if (!issue) {
+      return NextResponse.json({ error: "Issue not found" }, { status: 404 });
+    }
+
+    const issueData = issue as { game_id: string };
+    if (issueData.game_id !== gameId) {
+      return NextResponse.json(
+        { error: "Issue does not belong to this game" },
+        { status: 403 }
+      );
+    }
+
+    // Verify admin
+    const { data: game } = await supabase
+      .from("games")
+      .select("creator_id")
+      .eq("id", gameId)
+      .single();
+
+    const gameData = game as { creator_id: string } | null;
+    if (!gameData || gameData.creator_id !== playerId) {
+      return NextResponse.json(
+        { error: "Only admin can delete issues" },
+        { status: 403 }
+      );
+    }
 
     const { error } = await supabase
       .from("issues")
