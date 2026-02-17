@@ -12,12 +12,14 @@ import { DEFAULT_GAME_SETTINGS, DEFAULT_GAME_NAME, type GameSettings, type Votin
 export default function CreateGamePage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [gameName, setGameName] = useState("");
   const [settings, setSettings] = useState<GameSettings>({ ...DEFAULT_GAME_SETTINGS });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
     try {
       const response = await fetch("/api/games", {
@@ -42,8 +44,9 @@ export default function CreateGamePage() {
 
       const game = await response.json();
       router.push(`/game/${game.id}/join?host=true`);
-    } catch (error) {
-      // TODO: Show error toast
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to create game";
+      setError(message);
       setIsLoading(false);
     }
   };
@@ -72,6 +75,12 @@ export default function CreateGamePage() {
           <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-6">
             Create New Game
           </h1>
+
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm mb-6">
+              {error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Game Name */}
