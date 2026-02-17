@@ -75,7 +75,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+    const message =
+      error instanceof Error
+        ? error.message
+        : typeof error === "object" && error !== null && "message" in error
+        ? String((error as { message: unknown }).message)
+        : JSON.stringify(error);
     return NextResponse.json(
       { error: `Failed to create game: ${message}` },
       { status: 500 }
