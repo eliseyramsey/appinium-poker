@@ -133,7 +133,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// DELETE /api/players/[playerId] - Kick player (admin only)
+// DELETE /api/players/[playerId] - Kick player (admin) or leave game (self)
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     if (!isSupabaseConfigured()) {
@@ -146,13 +146,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const { playerId } = await params;
     const { searchParams } = new URL(request.url);
     const adminPlayerId = searchParams.get("adminPlayerId");
-
-    if (!adminPlayerId) {
-      return NextResponse.json(
-        { error: "Admin player ID required" },
-        { status: 400 }
-      );
-    }
+    const selfLeave = searchParams.get("selfLeave") === "true";
 
     const supabase = getSupabase();
 
@@ -172,14 +166,60 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     const playerData = player as { id: string; game_id: string };
 
-    // Check if requester is admin
+    // Get game info for admin check
     const { data: game } = await supabase
       .from("games")
       .select("creator_id")
       .eq("id", playerData.game_id)
       .single();
 
-    if (!game || (game as { creator_id: string }).creator_id !== adminPlayerId) {
+    const gameData = game as { creator_id: string } | null;
+    const isPlayerAdmin = gameData?.creator_id === playerId;
+
+    // Self-leave: player is deleting themselves
+    if (selfLeave) {
+      // If leaving player is admin, transfer admin to another player
+      if (isPlayerAdmin) {
+        const { data: otherPlayers } = await supabase
+          .from("players")
+          .select("id")
+          .eq("game_id", playerData.game_id)
+          .neq("id", playerId)
+          .limit(1);
+
+        if (otherPlayers && otherPlayers.length > 0) {
+          // Transfer admin to first available player
+          await supabase
+            .from("games")
+            .update({ creator_id: otherPlayers[0].id })
+            .eq("id", playerData.game_id);
+        }
+        // If no other players, game will be orphaned (acceptable)
+      }
+
+      // Delete the player
+      const { error: deleteError } = await supabase
+        .from("players")
+        .delete()
+        .eq("id", playerId);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      return NextResponse.json({ success: true });
+    }
+
+    // Admin kick: requires adminPlayerId
+    if (!adminPlayerId) {
+      return NextResponse.json(
+        { error: "Admin player ID required" },
+        { status: 400 }
+      );
+    }
+
+    // Check if requester is admin
+    if (!gameData || gameData.creator_id !== adminPlayerId) {
       return NextResponse.json(
         { error: "Only admin can kick players" },
         { status: 403 }
@@ -208,7 +248,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: `Failed to kick player: ${message}` },
+      { error: `Failed to delete player: ${message}` },
       { status: 500 }
     );
   }

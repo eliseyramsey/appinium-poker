@@ -189,7 +189,19 @@ function GameRoomContent() {
     }
   }, [currentPlayer, players, gameId, router, getSession, setCurrentPlayer, clearSession]);
 
-  const handleLeaveGame = () => {
+  const handleLeaveGame = async () => {
+    if (currentPlayer) {
+      try {
+        // Delete player from database before clearing local session
+        await fetch(`/api/players/${currentPlayer.id}?selfLeave=true`, {
+          method: "DELETE",
+        });
+        // Update store directly (realtime may not catch self-delete)
+        useGameStore.getState().removePlayer(currentPlayer.id);
+      } catch {
+        // Continue with local cleanup even if API fails
+      }
+    }
     clearSession(gameId);
     router.push("/");
   };
