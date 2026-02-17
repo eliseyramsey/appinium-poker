@@ -12,7 +12,7 @@
 | 2 | Meme System | Мемы показываются после reveal | MEME-01, MEME-02, MEME-03, MEME-04 | Complete |
 | 3 | Deploy | Приложение доступно публично | DEPLOY-01, DEPLOY-02, DEPLOY-03 | Complete |
 | 4 | Bug Fixes | Исправить security и quality баги | BUGS-01 to BUGS-14 | Complete |
-| 5 | Quick Wins + Tests | UX polish и test coverage | QW-01 to QW-05, TEST-01 to TEST-03 | Planned |
+| 5 | Quick Wins + Tests | UX polish и test coverage | QW-01 to QW-05, TEST-01 to TEST-03 | Complete |
 
 ---
 
@@ -152,10 +152,10 @@ Plans:
 **Plans:** 4 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Game Not Found + Empty State (QW-01, QW-05)
-- [ ] 05-02-PLAN.md — Loading States + Keyboard + Error Boundary (QW-02, QW-03, QW-04)
-- [ ] 05-03-PLAN.md — Vitest Setup (TEST-01)
-- [ ] 05-04-PLAN.md — Unit + Component Tests (TEST-02, TEST-03)
+- [x] 05-01-PLAN.md — Game Not Found + Empty State (QW-01, QW-05) ✓
+- [x] 05-02-PLAN.md — Loading States + Keyboard + Error Boundary (QW-02, QW-03, QW-04) ✓
+- [x] 05-03-PLAN.md — Vitest Setup (TEST-01) ✓
+- [x] 05-04-PLAN.md — Unit + Component Tests (TEST-02, TEST-03) ✓
 
 ---
 
